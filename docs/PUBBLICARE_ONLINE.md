@@ -93,3 +93,26 @@ Limiti (accettabili per una demo, non per le classi):
 
 ## App da installare e versione web insieme
 Il pacchetto da scaricare resta «solo applicazione». La versione web usa `DESKTOP_ONLY=false`, impostato da `render.yaml`.
+
+## 6. Sottodominio gratis senza carta: Hugging Face Spaces (demo)
+
+Se Render chiede la carta e non vuoi inserirla, la via gratis-senza-carta è **Hugging Face**:
+sottodominio stabile tipo `https://<tuo-nome>-omar-ai.hf.space`, PC spento, account gratuito.
+Nel progetto ci sono già `Dockerfile`, `.dockerignore` e il modello di README in `huggingface/README.md`.
+
+1. Su https://huggingface.co registrati gratis → *Create new → Space* → nome `omar-ai`, SDK **Docker**,
+   hardware *CPU basic* (gratis). Visibilità **Public** se vuoi che gli studenti aprano il link senza login
+   (il codice diventa visibile, ma chiavi e codici restano nei Secrets dello Space, mai nel codice).
+2. Sul PC: `git clone https://huggingface.co/spaces/<tuo-nome>/omar-ai cartella-spazio` → copia dentro
+   TUTTI i file di `AssistenteOmar` **tranne** `.env`, `node_modules/`, `data/`, `.git` → sostituisci il
+   `README.md` con `huggingface/README.md` → *commit* + *push*. Lo Space compila da solo (qualche minuto).
+3. Nello Space: *Settings → Variables and secrets* → aggiungi come **secret**:
+   `AI_API_KEY` (chiave Groq), `STUDENT_REGISTRATION_CODE` (nuovo, non `ER26OCT08`),
+   `TEACHER_REGISTRATION_CODE` (riservato, ≥10 caratteri); come **variabili**: `AI_PROVIDER=openai-compatible`,
+   `AI_BASE_URL=https://api.groq.com/openai/v1`, `AI_MODEL=openai/gpt-oss-20b`,
+   `STUDENT_EMAIL_DOMAIN=itiomar.net`, `ALLOW_OPEN_REGISTRATION=false`.
+   (Porta 7860, `HOST`, `DESKTOP_ONLY=false` e `TRUST_PROXY` sono già nel `Dockerfile`.)
+4. Apri `https://<tuo-nome>-omar-ai.hf.space`, registrati con email `@itiomar.net` e codice studenti, fai una domanda.
+
+Limiti (demo, non classi): la CPU gratis dorme dopo ~48h senza visite (si risveglia da sola, ~1 minuto);
+il disco è effimero (a ogni ricostruzione si azzerano account e chat); per l'uso reale serve un server con disco.
