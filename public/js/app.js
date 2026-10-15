@@ -1,6 +1,6 @@
 // Avvio, autenticazione, struttura della pagina, router e barra "Collega un dispositivo".
 import { h, add, clear, $, toast, dialog, confirmDialog, fmtDate } from './dom.js';
-import { api, get, post, patch, auth, ApiError, createRealtime } from './api.js';
+import { api, get, post, patch, del, auth, ApiError, createRealtime } from './api.js';
 import { renderHome, renderChat } from './chat.js';
 import { renderMaterials } from './materials.js';
 import { renderGroup } from './group.js';
@@ -64,7 +64,7 @@ async function boot() {
 }
 
 async function startSession() {
-  const me = await get('/me'); S.user = me.user; S.projects = me.projects;
+  const me = await get('/me'); S.user = me.user; S.projects = me.projects; S.pendingJoins = me.pending || [];
   const sub = await get('/subjects'); S.subjects = sub.subjects; S.modes = sub.modes; S.levels = sub.levels;
   buildShell();
   S.rt.start();
@@ -102,6 +102,16 @@ async function onNotify(ev) {
     refreshBadges();
     if (ev.status === 'pending') { try { const r = await get('/transfers'); const x = r.transfers.find((t) => t.id === ev.id); if (x?.direction === 'in') toast(`${x.from.displayName} ti vuole inviare ${x.folder ? `la cartella “${x.folder}”` : `${x.count} file`}: aprili in Materiali.`); } catch { /* ignora */ } }
     else if (ev.status === 'accepted') { try { const r = await get('/transfers'); const x = r.transfers.find((t) => t.id === ev.id); if (x?.direction === 'out') toast(`${x.to.displayName} ha accettato i tuoi file.`); } catch { /* ignora */ } }
+  }
+  if (ev.type === 'membership.updated') { // la richiesta di ingresso in un gruppo è stata decisa
+    const me = await get('/me').catch(() => null);
+    if (me) { S.projects = me.projects; S.pendingJoins = me.pending || []; }
+    if (ev.status === 'active') {
+      const p = S.projects.find((x) => x.id === ev.projectId);
+      toast(`Sei stato approvato: ora fai parte del gruppo “${ev.projectName || p?.name || ''}”.`);
+      if (p && !S.active) await S.setActive(p);
+    } else if (ev.status === 'rejected') toast(`La tua richiesta per il gruppo “${ev.projectName || ''}” non è stata accettata.`, 'bad');
+    renderBar();
   }
   if (ev.type === 'bulletin.updated') { refreshBadges(); if (!location.hash.startsWith('#/bulletin-board')) toast('Novità in bacheca.'); }
   S.emit({ type: 'notify', event: ev });
@@ -214,6 +224,7 @@ function renderGroupInto(bar) {
   clear(bar);
   if (!S.active) {
     add(bar, [h('span', { class: 'muted', text: 'Collega i dispositivi tuoi e dei compagni per lavorare a un progetto. Le chat restano personali: condividi solo ciò che scegli.' }),
+      (S.pendingJoins || []).map((p) => h('span', { class: 'badge warn', title: 'Entrerai appena il creatore del gruppo ti approva: riceverai un avviso.', text: `Richiesta inviata a “${p.name}”: in attesa di approvazione` })),
       h('button', { class: 'btn primary sm', type: 'button', text: 'Collega un dispositivo', onclick: linkDialog }),
       S.projects.length > 0 && h('button', { class: 'btn sm', type: 'button', text: `I miei gruppi (${S.projects.length})`, onclick: myGroupsDialog })]);
     return;
@@ -245,18 +256,51 @@ async function linkDialog() {
     h('button', { class: 'btn primary', type: 'button', style: 'margin-top:.7rem', text: 'Collegati', onclick: async (e) => {
       err.hidden = true; e.target.disabled = true;
       try { const r = await post('/projects/join', { code: code.value, workstream: ws1.value || undefined }); await afterLink(r); e.target.closest('dialog').close(); }
-      catch (ex) { err.textContent = ex.message; err.hidden = false; } finally { e.target.disabled = false; } } }),
+      catch (ex) {
+        err.textContent = ex.message + (ex.code === 'invito_non_valido' ? ' Controlla che il codice sia ancora attivo (chi l\u2019ha creato lo rivede in «Invita»). Se il gruppo è stato creato su un ALTRO computer, collegatevi prima allo stesso server della classe (qui sotto).' : '');
+        err.hidden = false;
+      } finally { e.target.disabled = false; } } }),
     h('hr'), h('h3', { text: 'Oppure crea una sessione di gruppo' }), mk('pn', 'Nome del progetto', name), mk('ps', 'Materia', subj), mk('pw2', 'Di cosa ti occupi tu? (facoltativo)', ws2),
     h('label', { style: 'font-weight:400;display:flex;gap:.5rem;align-items:center' }, appr, 'Chi entra con il codice deve essere approvato da me'),
     h('button', { class: 'btn', type: 'button', style: 'margin-top:.7rem', text: 'Crea la sessione di gruppo', onclick: async (e) => {
       err.hidden = true; e.target.disabled = true;
       try { const r = await post('/projects', { name: name.value, subjectId: subj.value || null, requiresApproval: appr.checked, workstream: ws2.value || undefined }); S.projects = (await get('/me')).projects; await S.setActive(S.projects.find((p) => p.id === r.project.id) || r.project); e.target.closest('dialog').close(); toast('Gruppo creato. Ora genera un codice di invito per i compagni.'); inviteDialog(); }
       catch (ex) { err.textContent = ex.message; err.hidden = false; } finally { e.target.disabled = false; } } }),
-    h('div', { style: 'margin-top:.8rem' }, err)]);
+    h('div', { style: 'margin-top:.8rem' }, err), h('hr'), classeBox()]);
   await dialog('Collega un dispositivo', body, [{ label: 'Chiudi', value: null }]);
 }
+// ───────── server della classe: i gruppi tra computer diversi passano da UN computer della classe ─────────
+export async function loadDesk() { try { S.desk = await get('/desktop'); } catch { S.desk = null; } return S.desk; }
+function classeBox() {
+  const box = h('div', { class: 'classe-box' });
+  (async () => {
+    const d = S.desk || await loadDesk(); if (!d || !d.desktopOnly) return; // versione web: niente server della classe (sono già tutti sullo stesso server)
+    if (!d.local) { // finestra aperta sul server della classe da un altro computer
+      add(box, [h('p', { class: 'small', text: 'Sei collegato al server della classe: gruppi e codici di invito sono condivisi con tutti i computer collegati qui.' }),
+        h('a', { class: 'btn sm', href: 'http://localhost:3300/desktop/locale', text: 'Usa Omar solo su questo computer' })]);
+      return;
+    }
+    if (d.aula) { add(box, h('p', { class: 'small', text: `Questo computer è il server della classe. Gli altri si collegano con: indirizzo ${(d.addresses || []).join(' oppure ')} · codice d’aula ${d.aulaKey}` })); return; }
+    add(box, [h('h3', { text: 'Compagni su un altro computer?' }),
+      h('p', { class: 'small muted', text: 'Ogni computer ha il suo Omar: un codice di invito vale solo dove è stato creato. Per lavorare in gruppo da computer diversi, un computer della classe (di solito quello del docente) diventa «server della classe» da Account, e gli altri si collegano qui.' }),
+      h('button', { class: 'btn sm primary', type: 'button', text: 'Collegati al server della classe', onclick: classeDialog })]);
+  })();
+  return box;
+}
+export async function classeDialog() {
+  const addr = h('input', { type: 'text', id: 'ca', placeholder: 'es. 192.168.1.20', autocomplete: 'off', maxLength: 80 });
+  const code = h('input', { type: 'text', id: 'cc', placeholder: 'ABCD-EFGH-JKMN-PQRS', autocomplete: 'off', maxLength: 24, style: 'text-transform:uppercase;letter-spacing:.08em' });
+  const err = h('div', { class: 'err', role: 'alert', hidden: true });
+  const body = h('div', null, [h('p', { class: 'small muted', text: 'Indirizzo e codice d’aula li vede chi ha il server della classe (Account > Server della classe). Si inseriscono una volta sola: poi l’icona «Omar AI» apre direttamente la classe.' }),
+    h('label', { for: 'ca', text: 'Indirizzo del server della classe' }), addr, h('label', { for: 'cc', text: 'Codice d’aula' }), code, err]);
+  await dialog('Collegati al server della classe', body, [{ label: 'Annulla', value: null }, { label: 'Collegati', primary: true, onClick: async () => {
+    err.hidden = true;
+    try { const r = await post('/desktop/classe', { address: addr.value, code: code.value }); toast(`Collegato${r.nome ? ` a ${r.nome}` : ''}: apro il server della classe…`); setTimeout(() => { location.href = r.openUrl; }, 600); return true; }
+    catch (ex) { err.textContent = ex.message; err.hidden = false; return false; }
+  } }]);
+}
 async function afterLink(r) {
-  S.projects = (await get('/me')).projects;
+  const me = await get('/me'); S.projects = me.projects; S.pendingJoins = me.pending || [];
   if (r.status === 'pending') { toast('Richiesta inviata: attendi che il creatore del gruppo ti approvi.'); renderBar(); return; }
   const p = S.projects.find((x) => x.id === r.project?.id) || r.project;
   await S.setActive(p); toast(`Sei nel gruppo “${p.name}”.`); if (location.hash.startsWith('#/gruppo')) route();
@@ -285,12 +329,23 @@ export async function inviteDialog() {
   const out = h('div'); const err = h('div', { class: 'err', hidden: true, role: 'alert' });
   const ttl = h('select', { id: 'ttl' }, [[15, '15 minuti'], [60, '1 ora'], [1440, '1 giorno']].map(([v, l]) => h('option', { value: v, text: l, selected: v === 60 })));
   const uses = h('input', { type: 'number', id: 'uses', min: 1, max: 100, value: 5 });
-  const show = (r) => { clear(out); add(out, [h('p', null, 'Codice di invito (valido fino alle ', fmtDate(r.expiresAt), ', max ', r.maxUses, ' usi):'), h('div', { class: 'code', text: r.code }), h('p', { class: 'small muted', text: r.note })]); };
+  const copy = (code) => h('button', { class: 'btn sm', type: 'button', text: 'Copia', onclick: async (e) => { try { await navigator.clipboard.writeText(code); e.target.textContent = 'Copiato'; } catch { toast(`Codice: ${code}`); } } });
+  const active = h('div');
+  const loadActive = async () => {
+    clear(active);
+    let list = []; try { list = (await get(`/projects/${S.active.id}/invites`)).invites.filter((i) => i.active); } catch { return; }
+    if (!list.length) { add(active, h('p', { class: 'small muted', text: 'Nessun codice attivo: generane uno.' })); return; }
+    add(active, [h('h3', { text: 'Codici attivi' }), list.map((i) => h('div', { class: 'item row' }, h('span', { class: 'code', style: 'font-size:1.05rem;margin:0', text: i.code || '(creato prima dell’aggiornamento: rigeneralo)' }),
+      h('span', { class: 'small muted grow', text: `scade ${fmtDate(i.expiresAt)} · usato ${i.uses}/${i.maxUses}` }), i.code && copy(i.code),
+      h('button', { class: 'btn sm danger', type: 'button', text: 'Annulla', onclick: async () => { try { await del(`/projects/${S.active.id}/invites/${i.id}`); loadActive(); } catch (ex) { toast(ex.message, 'bad'); } } })))]);
+  };
+  const show = (r) => { clear(out); add(out, [h('p', null, 'Nuovo codice di invito (valido fino alle ', fmtDate(r.expiresAt), ', max ', r.maxUses, ' usi):'), h('div', { class: 'row' }, h('div', { class: 'code', text: r.code }), copy(r.code)), h('p', { class: 'small muted', text: r.note })]); loadActive(); };
   const gen = (path) => async () => { err.hidden = true; try { show(await post(`/projects/${S.active.id}/invites${path}`, { ttlMin: +ttl.value, maxUses: +uses.value })); } catch (ex) { err.textContent = ex.message; err.hidden = false; } };
+  loadActive();
   const body = h('div', null, [h('p', { class: 'small muted', text: 'Comunica il codice a voce o scrivilo ai compagni. Il codice non dà permessi speciali, scade da solo e puoi annullarlo o rigenerarlo quando vuoi.' }),
     h('div', { class: 'row' }, [h('div', null, h('label', { for: 'ttl', text: 'Durata' }), ttl), h('div', null, h('label', { for: 'uses', text: 'Usi massimi' }), uses)]),
     h('div', { class: 'row', style: 'margin-top:.7rem' }, [h('button', { class: 'btn primary', type: 'button', text: 'Genera un nuovo codice', onclick: gen('') }),
-      h('button', { class: 'btn', type: 'button', text: 'Rigenera (annulla i codici attivi)', onclick: gen('/regenerate') })]), h('div', { style: 'margin-top:1rem' }, out), err]);
+      h('button', { class: 'btn', type: 'button', text: 'Rigenera (annulla i codici attivi)', onclick: gen('/regenerate') })]), h('div', { style: 'margin-top:1rem' }, out), err, active, h('hr'), classeBox()]);
   await dialog('Invita compagni nel gruppo', body, [{ label: 'Chiudi' }]);
 }
 async function leaveDialog() {

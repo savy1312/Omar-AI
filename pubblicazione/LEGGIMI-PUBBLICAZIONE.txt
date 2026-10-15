@@ -22,21 +22,7 @@ un altro (es. omar-ai-oleggio). Per aggiornare la pagina dopo una modifica basta
 rilanciare lo stesso script (o ritrascinare la cartella su Netlify).
 
 E L'APPLICAZIONE?
-Netlify e Vercel ospitano solo pagine fisse: non possono far girare Omar AI, che ha
-bisogno di un server Node.js acceso, del suo database e di Ollama (il motore IA).
-Omar quindi gira sul computer della scuola. Per raggiungerlo da internet c'e' lo script
-facoltativo "app-online-cloudflare.bat" (vedi sotto). Quando hai un indirizzo fisso
-dell'app, scrivilo in sito\index.html alla riga  const APP_URL = '';  e ripubblica:
-sulla pagina comparira' il pulsante "Apri Omar AI online".
-
-APP-ONLINE-CLOUDFLARE.BAT (facoltativo, in questa cartella "pubblicazione")
-  Avvia Omar e lo rende raggiungibile da internet con un tunnel Cloudflare gratuito,
-  senza aprire porte del router. Mostra un indirizzo tipo
-  https://parole-a-caso.trycloudflare.com valido finche' la finestra resta aperta
-  (cambia a ogni avvio; per un indirizzo fisso serve un dominio della scuola collegato
-  a Cloudflare: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/).
-  ATTENZIONE: con l'app su internet, chat e file degli studenti (spesso minorenni) passano
-  da internet e dal servizio Cloudflare. Decidilo con la scuola (dirigente, animatore
-  digitale, responsabile privacy) prima di usarlo con le classi. Lo script si rifiuta di
-  partire se i codici di registrazione nel .env sono quelli di esempio o se la
-  registrazione libera e' attiva.
+Omar AI non ha una versione web: e' solo un'applicazione da scaricare. Il sito serve
+soltanto a scaricarla; chi la installa la apre dall'icona "Omar AI" sul Desktop e
+l'IA lavora sul suo computer. Aprendo Omar in un normale browser compare solo
+l'avviso "Omar AI si apre dall'applicazione".

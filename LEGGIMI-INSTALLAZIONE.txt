@@ -33,6 +33,13 @@ Apri il file .env nella cartella di installazione
 Poi riavvia Omar. Gli altri dispositivi della rete scolastica si collegano seguendo
 docs/RETE_LOCALE.md.
 
+LAVORARE IN GRUPPO DA COMPUTER DIVERSI
+Ogni computer ha il suo Omar: un codice di invito vale solo dove e' stato creato.
+Sul computer del docente: Account > Server della classe > "Rendi questo computer il
+server della classe" (poi riapri l'icona): compaiono indirizzo e codice d'aula.
+Sugli altri computer: Gruppo > Collega un dispositivo > "Collegati al server della
+classe" e inserisci indirizzo e codice d'aula (una volta sola).
+
 AGGIORNARE
 Scarica la nuova versione e lancia di nuovo l'installazione: .env e dati restano intatti.
 

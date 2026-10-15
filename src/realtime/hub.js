@@ -70,6 +70,7 @@ function createHub(ctx) {
     server.on('upgrade', (req, socket, head) => {
       let path; try { path = new URL(req.url, 'http://x').pathname; } catch { path = ''; }
       if (path !== '/ws') return socket.destroy();
+      if (ctx.desktopGate && !ctx.desktopGate(req)) { socket.write('HTTP/1.1 403 Forbidden\r\n\r\n'); return socket.destroy(); }
       const origin = req.headers.origin; // contro il cross-site WebSocket hijacking
       if (origin) { let h; try { h = new URL(origin).host; } catch { h = ''; } if (h !== req.headers.host) { socket.write('HTTP/1.1 403 Forbidden\r\n\r\n'); return socket.destroy(); } }
       wss.handleUpgrade(req, socket, head, (ws) => {

@@ -1,4 +1,5 @@
 'use strict';
+const crypto = require('node:crypto');
 const path = require('node:path');
 const http = require('node:http');
 const express = require('express');
@@ -14,6 +15,7 @@ const { ProviderError } = require('./ai/errors');
 const { createAccess } = require('./projects/access');
 const { createEvents } = require('./realtime/events');
 const { createHub } = require('./realtime/hub');
+const { createDesktop } = require('./desktop');
 const { createMaterials } = require('./materials/service');
 const { createTutor } = require('./engine/tutor');
 const { createExplainer } = require('./engine/explain');
@@ -99,6 +101,12 @@ function createApp(over = {}) {
   app.disable('x-powered-by');
   if (cfg.trustProxy) app.set('trust proxy', 1);
 
+  // ── Solo applicazione e server della classe (src/desktop.js) ──
+  ctx.desktop = createDesktop(ctx);
+  ctx.launchKey = ctx.desktop.launchKey;
+  ctx.desktopGate = ctx.desktop.gate;
+  ctx.desktop.mountPublic(app);
+
   app.use((req, res, next) => {
     res.set({
       'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ws: wss:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
@@ -110,6 +118,7 @@ function createApp(over = {}) {
   app.use('/api', (req, _res, next) => (ipLimiter.allow(req.ip) ? next() : next(E.rate('Troppe richieste da questo dispositivo.', { retryAfterSec: ipLimiter.retryAfterSec(req.ip) }))));
   app.use(express.json({ limit: '200kb' }));
 
+  ctx.desktop.mountApi(app);
   require('./routes/core')(app, ctx);
   require('./routes/collab')(app, ctx);
   require('./routes/features')(app, ctx);

@@ -15,6 +15,21 @@ Dal pacchetto scaricato (`omar-ai-1.0.0.zip`), dopo averlo estratto:
 - **macOS**: `installa-mac.command` (tasto destro → Apri) installa in `~/Applications/OmarAI` e crea «Omar AI» sul Desktop.
 - **Linux**: `./installa-linux.sh` installa in `~/.local/share/omar-ai` e crea la voce nel menu e sul Desktop.
 
+**Solo applicazione, niente web app.** Omar AI si usa esclusivamente dall'icona: a ogni avvio il server crea una chiave segreta (in `data/.launch-key`) e la consegna alla sola finestra dell'app. Senza quella chiave interfaccia, API e WebSocket rispondono «Omar AI si apre dall'applicazione», anche aprendo `localhost:3300` in un browser. La finestra usa un profilo separato (`data/finestra-app`), quindi non condivide cookie né cronologia con il browser normale. Unica eccezione, da decidere con la scuola: il server d'aula in rete locale (`DESKTOP_ONLY=false`, vedi `docs/RETE_LOCALE.md`).
+
+### Versione web (online, con Groq)
+
+Con l'IA su Groq Omar può anche essere pubblicato online e usato dal browser con un link: procedura passo passo in `docs/PUBBLICARE_ONLINE.md` (Render, file `render.yaml`).
+
+### Gruppi tra computer diversi: il «server della classe»
+
+Ogni computer ha il suo Omar, con i suoi account e i suoi gruppi: **un codice di invito vale solo sul computer dove è stato creato**. Per lavorare in gruppo da computer diversi:
+1. Su UN computer della classe (di solito quello del docente): *Account → Server della classe → «Rendi questo computer il server della classe»*, poi si riapre l'icona. Omar mostra **indirizzo** (es. `192.168.1.20:3300`) e **codice d'aula** (es. `ABCD-EFGH-JKMN-PQRS`, stabile, in `data/.aula-key`). Se Windows chiede il permesso del firewall, consentire solo le reti private.
+2. Sugli altri computer: *Gruppo → Collega un dispositivo → «Collegati al server della classe»* (oppure da Account), una volta sola. Da quel momento l'icona apre direttamente la classe (`data/classe.json`); ci si registra lì con il codice di registrazione. «Usa Omar solo su questo computer» torna indietro.
+3. Sul server della classe gruppi, inviti, approvazioni e notifiche funzionano tra tutti i computer collegati. Anche lì un normale browser non entra: serve l'app con il codice d'aula. Il server della classe deve restare acceso con Omar aperto; l'IA delle domande fatte lì gira sul suo Ollama.
+
+I codici di invito si scrivono senza badare a maiuscole, spazi o trattino; chi gestisce il gruppo li rivede tra i **«Codici attivi»** (salvati cifrati) con *Copia* e *Annulla*. Chi chiede di entrare vede «Richiesta inviata… in attesa» e, all'approvazione, riceve subito un avviso ed entra nel gruppo senza ricaricare.
+
 L'icona lancia `avvia-omar.bat` / `avvia-omar.sh`: si apre la finestra del server (non va chiusa: chiudendola Omar si spegne) e, appena il server risponde, Omar si apre in una finestra **da applicazione** (Edge o Chrome in modalità `--app`, senza barre del browser; se mancano, il browser predefinito). Un secondo doppio clic con Omar già acceso apre solo la finestra. Le istruzioni per chi scarica sono in `LEGGIMI-INSTALLAZIONE.txt`.
 
 ## Installazione su Windows (a mano)
@@ -26,7 +41,7 @@ L'icona lancia `avvia-omar.bat` / `avvia-omar.sh`: si apre la finestra del serve
    copy .env.example .env
    ```
 3. Apri `.env` con il Blocco note e **cambia i due codici di registrazione** (`STUDENT_REGISTRATION_CODE`, `TEACHER_REGISTRATION_CODE`).
-4. Avvia: `npm start` e apri <http://localhost:3300>.
+4. Avvia con `avvia-omar.bat` (apre la finestra dell'app). Con il solo `npm start` il server parte, ma l'interfaccia si apre solo dalla finestra dell'app: `node scripts/apri-finestra.js`.
 
 | Comando | Cosa fa |
 |---|---|

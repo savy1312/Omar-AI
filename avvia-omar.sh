@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")"
 PORT=$( [ -f .env ] && grep -E '^PORT=' .env | cut -d= -f2 || true ); PORT=${PORT:-3300}; URL="http://localhost:$PORT"
 apri() { node scripts/apri-finestra.js "$PORT" & }
-if curl -s -o /dev/null --max-time 2 "$URL/api/info"; then apri; exit 0; fi   # gia' acceso: apro solo la finestra
+if curl -s -o /dev/null --max-time 2 "$URL/desktop/ping"; then apri; exit 0; fi   # gia' acceso: apro solo la finestra
 command -v node >/dev/null || { echo "Node.js 22.13 o successivo non trovato. Installalo da https://nodejs.org"; exit 1; }
 [ -d node_modules ] || { echo "Installo le dipendenze..."; npm install; }
 [ -f .env ] || cp .env.example .env

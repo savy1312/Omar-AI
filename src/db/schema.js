@@ -214,4 +214,7 @@ CREATE TABLE bulletins (
 );
 CREATE TABLE bulletin_reads (bulletin_id TEXT NOT NULL REFERENCES bulletins(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, read_at TEXT NOT NULL, PRIMARY KEY (bulletin_id, user_id));
 ` },
+{ id: 5, name: 'inviti_rileggibili', sql: `
+ALTER TABLE invites ADD COLUMN code_enc TEXT;
+` },
 ];

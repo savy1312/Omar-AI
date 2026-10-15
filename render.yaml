@@ -1,0 +1,46 @@
+# Omar AI su Render (https://render.com) come servizio web: Blueprint letto da "New > Blueprint".
+# I valori segreti (chiave Groq, codici di registrazione) NON sono qui: Render li chiede alla creazione (sync: false).
+services:
+  - type: web
+    name: omar-ai
+    runtime: node
+    region: frankfurt            # dati in Europa (Germania)
+    plan: starter                # serve un piano a pagamento: i servizi gratuiti non hanno disco e perderebbero i dati
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /desktop/ping
+    disk:
+      name: omar-dati
+      mountPath: /var/data       # database, file caricati e segreto del server: restano tra un riavvio e l'altro
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DESKTOP_ONLY        # versione web: si apre dal browser
+        value: "false"
+      - key: TRUST_PROXY         # Render sta davanti all'app: serve per i limiti anti-abuso per indirizzo
+        value: "true"
+      - key: DATA_DIR
+        value: /var/data
+      - key: AI_PROVIDER
+        value: openai-compatible
+      - key: AI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: AI_MODEL
+        value: openai/gpt-oss-20b
+      - key: AI_VISION           # true solo dopo aver scelto un modello Groq che legge immagini (AI_VISION_MODEL)
+        value: "false"
+      - key: AI_API_KEY
+        sync: false
+      - key: STUDENT_REGISTRATION_CODE
+        sync: false
+      - key: TEACHER_REGISTRATION_CODE
+        sync: false
+      - key: STUDENT_EMAIL_DOMAIN
+        value: itiomar.net
+      - key: ALLOW_OPEN_REGISTRATION
+        value: "false"

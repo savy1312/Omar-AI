@@ -7,7 +7,7 @@ if exist .env for /f "tokens=2 delims==" %%a in ('findstr /b "PORT=" .env') do s
 set URL=http://localhost:%PORT%
 
 rem Omar e' gia' acceso (ad esempio doppio clic sull'icona una seconda volta)? Apro solo la finestra.
-curl -s -o nul --max-time 2 %URL%/api/info && (node scripts\apri-finestra.js %PORT% & exit /b 0)
+curl -s -o nul --max-time 2 %URL%/desktop/ping && (node scripts\apri-finestra.js %PORT% & exit /b 0)
 
 where node >nul 2>nul || (echo Node.js 22.13 o successivo non trovato. Installalo da https://nodejs.org & pause & exit /b 1)
 if not exist node_modules (echo Installo le dipendenze... & call npm install || (pause & exit /b 1))

@@ -108,6 +108,41 @@ export async function renderAccount(main, S) {
       h('button', { class: 'acc-link danger', type: 'button', onclick: () => S.logout?.() }, icon('power', 18), h('span', null, h('strong', { text: 'Esci' }), h('small', { text: 'Chiude la sessione su questo dispositivo.' }))),
     ])]);
 
-  add(page, [h('div', { class: 'acc-grid' }, [h('div', { class: 'acc-col' }, [profile, devices, prefs]), h('div', { class: 'acc-col' }, [form, more])])]);
+  // ── Server della classe: i gruppi tra computer diversi passano da UN computer della classe ──
+  const classeBody = h('div');
+  const classe = h('section', { class: 'acc-card', 'aria-labelledby': 'acc-c' }, [h('h2', { id: 'acc-c' }, icon('users', 19), 'Server della classe'), classeBody]);
+  const copyBtn = (t) => h('button', { class: 'btn sm', type: 'button', text: 'Copia', onclick: async (e) => { try { await navigator.clipboard.writeText(t); e.target.textContent = 'Copiato'; } catch { toast(t); } } });
+  const setAula = async (on) => {
+    if (on && !(await confirmDialog('Rendere questo computer il server della classe?', 'Gli altri computer della classe potranno collegarsi a questo Omar con l’indirizzo e il codice d’aula, per lavorare in gruppo. Questo computer deve restare acceso con Omar aperto mentre la classe lo usa, sulla rete della scuola. Se Windows chiede il permesso del firewall, consenti solo le reti private.', { ok: 'Attiva' }))) return;
+    try { const r = await post('/desktop/aula', { on }); toast(r.message); drawClasse(); } catch (e) { toast(e.message, 'bad'); }
+  };
+  async function drawClasse() {
+    clear(classeBody);
+    let d; try { d = await get('/desktop'); } catch { add(classeBody, h('p', { class: 'small muted', text: 'Stato non disponibile.' })); return; }
+    if (!d.desktopOnly) { classe.hidden = true; return; } // versione web: tutti usano già lo stesso server
+    if (!d.local) {
+      add(classeBody, [h('p', { class: 'small', text: 'Sei collegato al server della classe da un altro computer: gruppi e codici di invito sono condivisi con tutta la classe.' }),
+        h('a', { class: 'btn sm', href: 'http://localhost:3300/desktop/locale', text: 'Usa Omar solo su questo computer' })]);
+      return;
+    }
+    if (d.aula) {
+      add(classeBody, [h('p', { class: 'small', text: 'Questo computer è il server della classe. Comunica ai compagni (una volta sola) indirizzo e codice d’aula: lo inseriscono in Gruppo > Collega un dispositivo > «Collegati al server della classe».' }),
+        h('div', { class: 'item row' }, h('span', { class: 'grow' }, h('small', { class: 'muted', text: 'Indirizzo  ' }), h('strong', { text: (d.addresses || []).join('  oppure  ') || 'nessuna rete' })), d.addresses?.[0] && copyBtn(d.addresses[0])),
+        h('div', { class: 'item row' }, h('span', { class: 'grow' }, h('small', { class: 'muted', text: 'Codice d’aula  ' }), h('strong', { class: 'code', style: 'font-size:1.05rem;margin:0', text: d.aulaKey })), copyBtn(d.aulaKey)),
+        h('button', { class: 'btn sm', type: 'button', text: 'Disattiva il server della classe', onclick: () => setAula(false) })]);
+      return;
+    }
+    if (d.classe) {
+      add(classeBody, [h('p', { class: 'small', text: `L’icona «Omar AI» apre il server della classe ${d.classe.nome ? `(${d.classe.nome}) ` : ''}su ${d.classe.address}.` }),
+        h('button', { class: 'btn sm', type: 'button', text: 'Scollega da quel server', onclick: async () => { try { await del('/desktop/classe'); toast('Scollegato: l’icona aprirà Omar su questo computer.'); drawClasse(); } catch (e) { toast(e.message, 'bad'); } } })]);
+      return;
+    }
+    add(classeBody, [h('p', { class: 'small muted', text: 'Ogni computer ha il suo Omar: gruppi e codici di invito valgono solo sul computer dove sono stati creati. Per lavorare in gruppo da computer diversi, un computer della classe (di solito quello del docente) diventa server della classe e gli altri si collegano.' }),
+      h('div', { class: 'row' }, [h('button', { class: 'btn sm primary', type: 'button', text: 'Collegati a un server della classe', onclick: async () => (await import('./app.js')).classeDialog() }),
+        h('button', { class: 'btn sm', type: 'button', text: 'Rendi questo computer il server della classe', onclick: () => setAula(true) })])]);
+  }
+  drawClasse();
+
+  add(page, [h('div', { class: 'acc-grid' }, [h('div', { class: 'acc-col' }, [profile, devices, prefs]), h('div', { class: 'acc-col' }, [form, classe, more])])]);
   main.append(page);
 }

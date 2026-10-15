@@ -107,7 +107,7 @@
         <div class="text-left flex items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div class="min-w-0">
             <h3 class="text-sm font-semibold text-white">Pacchetto Installatore</h3>
-            <p class="text-xs text-zinc-400">Windows / macOS / Linux · <span class="num">991 KB</span> · crea l'icona sul Desktop</p>
+            <p class="text-xs text-zinc-400">Windows / macOS / Linux · <span class="num">1006 KB</span> · crea l'icona sul Desktop</p>
           </div>
           <span class="num text-[11px] font-mono bg-white/10 px-2.5 py-1 rounded-md text-zinc-300">v1.0.0</span>
         </div>
@@ -119,11 +119,6 @@
         </button>
         <p id="dl-status" class="text-xs text-zinc-400 min-h-[1rem]" role="status" aria-live="polite"></p>
 
-        <a id="open-app" href="http://localhost:3300" target="_blank" rel="noopener"
-          class="w-full rounded-xl border border-white/15 hover:border-white/35 py-3 px-6 text-sm text-zinc-200 flex items-center justify-center gap-2 transition">
-          <svg class="ico"><use href="#i-open"/></svg>
-          <span>Apri Omar AI (già installato su questo computer)</span>
-        </a>
 
         <div id="install-steps" class="text-left text-[12px] text-zinc-400 leading-relaxed bg-black/30 border border-white/5 rounded-xl p-4 transition">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -139,7 +134,7 @@
             <li>Nella cartella estratta <span id="st-run">fai doppio clic su</span> <span class="font-mono text-zinc-200" id="st-file">INSTALLA-WINDOWS.bat</span>.<span id="st-warn" class="block text-zinc-500">Se Windows avvisa «Windows ha protetto il PC»: «Ulteriori informazioni» &gt; «Esegui comunque».</span></li>
             <li>Sul Desktop compare l'icona <strong class="text-zinc-200">Omar AI</strong>: doppio clic e Omar si apre nella sua finestra.</li>
           </ol>
-          <p class="mt-2 text-zinc-500">Servono <a class="underline hover:text-white" href="https://nodejs.org" target="_blank" rel="noopener">Node.js 22.13+</a> e <a class="underline hover:text-white" href="https://ollama.com" target="_blank" rel="noopener">Ollama</a> (gratuiti). Al primo avvio Omar scarica i modelli IA (circa 8 GB, una volta sola). L'IA gira sul computer: conversazioni e file non lasciano la scuola.</p>
+          <p class="mt-2 text-zinc-500">Servono <a class="underline hover:text-white" href="https://nodejs.org" target="_blank" rel="noopener">Node.js 22.13+</a> e <a class="underline hover:text-white" href="https://ollama.com" target="_blank" rel="noopener">Ollama</a> (gratuiti). Al primo avvio Omar scarica i modelli IA (circa 8 GB, una volta sola). Omar AI è solo un'applicazione: non c'è una versione web, si apre dall'icona. L'IA gira sul computer: conversazioni e file non lasciano la scuola.</p>
         </div>
 
         <p class="text-[11px] text-zinc-500 text-center">Nessuna registrazione richiesta per il download standard.</p>
@@ -203,10 +198,6 @@
   updateCountdown();
   setInterval(updateCountdown, 1000);
 
-  // ── Indirizzo della web app Omar AI già online (lascia vuoto se non c'è). Esempio: 'https://omar.tuascuola.it'
-  //    Se lo compili, compare il pulsante «Apri Omar AI online» al posto del collegamento al computer locale.
-  const APP_URL = '';
-
   // Download: lo .zip è pubblicato accanto a questa pagina.
   const PACKAGE = 'omar-ai-1.0.0.zip';
   const btn = document.getElementById('btn-download-omar');
@@ -242,10 +233,6 @@
     box.classList.add('highlight'); box.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
   }
   btn.addEventListener('click', startDownload);
-  if (APP_URL) {
-    const link = document.getElementById('open-app');
-    link.href = APP_URL; link.querySelector('span').textContent = 'Apri Omar AI online';
-  }
 </script>
 
 </body>

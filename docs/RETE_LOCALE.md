@@ -14,7 +14,11 @@ L'applicazione mostra sempre quale dei casi è attivo (banner e pagina *Privacy*
 
 ## Avvio per la rete
 
-1. Imposta nel file `.env`: `HOST=0.0.0.0` e i codici di registrazione.
+> **Consigliato:** per far lavorare in gruppo computer diversi usa il **server della classe** (README, «Gruppi tra computer diversi»): resta un'applicazione, e i computer si collegano con indirizzo + codice d'aula. La modalità web qui sotto serve solo se qualcuno deve usare Omar da un browser senza app.
+>
+> Omar AI si distribuisce come **applicazione da scaricare** e, così installato, si apre **solo** dalla sua icona: il server rifiuta i normali browser (una chiave segreta nuova a ogni avvio viene consegnata alla sola finestra dell'app). La modalità di rete qui sotto è un'eccezione da decidere con la scuola, per un solo PC che fa da server per l'aula: lì gli altri dispositivi usano il browser.
+
+1. Imposta nel file `.env`: `HOST=0.0.0.0`, **`DESKTOP_ONLY=false`** e i codici di registrazione. (Con `HOST=0.0.0.0` ma senza `DESKTOP_ONLY=false` il server non parte, per non aprire per sbaglio l'app alla rete.)
 2. Avvia con `npm start`: nella finestra compaiono gli indirizzi, ad esempio `http://192.168.1.20:3300`.
 3. Sugli altri dispositivi apri quell'indirizzo nel browser.
 4. Se il firewall di Windows chiede il permesso, consenti l'accesso **solo alle reti private**.

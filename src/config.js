@@ -30,8 +30,14 @@ function loadConfig(over = {}) {
   return {
     env: e.NODE_ENV || 'development',
     port: int(e.PORT, 3300),
-    host: e.HOST || '127.0.0.1', // per la rete locale: HOST=0.0.0.0 (vedi docs/RETE_LOCALE.md)
+    host: e.HOST || (bool(e.AULA, false) ? '0.0.0.0' : '127.0.0.1'), // per la rete locale: HOST=0.0.0.0 (vedi docs/RETE_LOCALE.md)
     trustProxy: bool(e.TRUST_PROXY, false),
+    // Omar AI è un'applicazione da scaricare: l'interfaccia si apre SOLO dalla finestra lanciata dall'icona (chiave segreta
+    // per ogni avvio). DESKTOP_ONLY=false solo per il server della scuola in rete locale (docs/RETE_LOCALE.md).
+    desktopOnly: bool(e.DESKTOP_ONLY, true),
+    // AULA=true: questo computer è il «server della classe» (gruppi e codici di invito condivisi tra i computer della classe)
+    aula: bool(e.AULA, false),
+    envFileDisabled: !!over.skipEnvFile,
     dataDir,
     dbFile: over.dbFile || e.DB_FILE || path.join(dataDir, 'omar.db'),
     secret,

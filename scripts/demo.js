@@ -21,7 +21,7 @@ const base = createProvider({ provider: 'demo' });
 const seen = { lastTutorSystem: '', lastTutorUser: '' };
 const provider = { ...base, async complete(args) { if (args.task === 'tutor') { seen.lastTutorSystem = args.system; seen.lastTutorUser = args.messages.at(-1).content; } return base.complete(args); } };
 
-const { server, ctx, close } = createApp({ config: { skipEnvFile: true, dataDir: DIR, env: { AI_PROVIDER: 'demo', HOST: '127.0.0.1', PORT: String(PORT) } }, provider, logLevel: 'silent' });
+const { server, ctx, close } = createApp({ config: { skipEnvFile: true, dataDir: DIR, env: { DESKTOP_ONLY: 'false', AI_PROVIDER: 'demo', HOST: '127.0.0.1', PORT: String(PORT) } }, provider, logLevel: 'silent' });
 const say = (t) => console.log(t);
 const step = (n, t) => say(`\n\x1b[1m${n}. ${t}\x1b[0m`);
 const note = (t) => say(`   ${t}`);

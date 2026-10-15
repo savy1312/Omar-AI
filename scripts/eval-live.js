@@ -21,7 +21,7 @@ const SCENARI = [
 
 (async () => {
   const dir = path.resolve(__dirname, '..', 'data-eval'); fs.rmSync(dir, { recursive: true, force: true });
-  const { server, ctx, close } = createApp({ config: { dataDir: dir }, logLevel: 'silent' });
+  const { server, ctx, close } = createApp({ config: { dataDir: dir, env: { DESKTOP_ONLY: 'false' } }, logLevel: 'silent' });
   if (ctx.provider.simulated || ctx.provider.name === 'demo' || ctx.cfg.ai.provider === 'demo') { console.error('Nessun modello reale configurato (AI_PROVIDER=demo): la valutazione richiede un provider vero. Vedi .env.example.'); await close(); process.exit(1); }
   await new Promise((r) => server.listen(0, '127.0.0.1', r)); const url = `http://127.0.0.1:${server.address().port}`;
   console.log(`Provider: ${ctx.provider.name} / ${ctx.provider.model}${ctx.cfg.ai.dataLeavesNetwork ? ' (i testi di PROVA lasciano la rete locale)' : ''}`);

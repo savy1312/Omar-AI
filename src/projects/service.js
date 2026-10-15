@@ -18,6 +18,12 @@ function createProjects(ctx) {
   const failsUser = new RateLimiter(cfg.limits.inviteFailsPerUser, 10 * 60_000);
   const failsIp = new RateLimiter(cfg.limits.inviteFailsPerIp, 10 * 60_000);
   const codeHash = (code) => hmac(cfg.secret, `invite:${normalizeCode(code)}`);
+  // Il codice è salvato anche CIFRATO (AES-256-GCM con una chiave derivata dal segreto del server): così chi gestisce il
+  // gruppo può rivedere e ricopiare i codici ancora attivi. Per riconoscere un codice si usa sempre l'hash.
+  const encKey = crypto.createHash('sha256').update(`invite-enc:${cfg.secret}`).digest();
+  const seal = (code) => { const iv = crypto.randomBytes(12); const c = crypto.createCipheriv('aes-256-gcm', encKey, iv); const out = Buffer.concat([c.update(code, 'utf8'), c.final()]); return [iv, c.getAuthTag(), out].map((b) => b.toString('base64url')).join('.'); };
+  const unseal = (s) => { try { const [iv, tag, out] = String(s).split('.').map((x) => Buffer.from(x, 'base64url')); const d = crypto.createDecipheriv('aes-256-gcm', encKey, iv); d.setAuthTag(tag); return Buffer.concat([d.update(out), d.final()]).toString('utf8'); } catch { return null; } };
+  const notifyUser = (userId, data) => { try { ctx.hub?.notify([userId], { type: 'membership.updated', ...data }); } catch { /* utente non collegato */ } };
 
   const pubProject = (p, m) => ({ id: p.id, name: p.name, subjectId: p.subject_id, requiresApproval: !!p.requires_approval, isDemo: !!p.is_demo, createdAt: p.created_at, ...(m ? { myRole: m.role, myWorkstream: m.workstream, autoShare: !!m.auto_share } : {}) });
   const pubMember = (m, online) => ({ userId: m.user_id, displayName: m.display_name, role: m.role, status: m.status, workstream: m.workstream, joinedAt: m.joined_at, online: !!online });
@@ -50,14 +56,14 @@ function createProjects(ctx) {
     let code; let tries = 0;
     do { code = newCode(); } while (db.get('SELECT 1 x FROM invites WHERE code_hash = ?', codeHash(code)) && ++tries < 5);
     const id = uuid(); const expires = new Date(Date.now() + ttl * 60_000).toISOString();
-    db.run('INSERT INTO invites (id, project_id, code_hash, created_by, created_at, expires_at, max_uses) VALUES (?,?,?,?,?,?,?)', id, projectId, codeHash(code), user.id, now(), expires, uses);
+    db.run('INSERT INTO invites (id, project_id, code_hash, code_enc, created_by, created_at, expires_at, max_uses) VALUES (?,?,?,?,?,?,?,?)', id, projectId, codeHash(code), seal(code), user.id, now(), expires, uses);
     access.audit(user.id, projectId, 'invito.crea', { inviteId: id });
-    return { id, code, expiresAt: expires, maxUses: uses, note: 'Il codice viene mostrato una sola volta: non è recuperabile dal server.' }; // in DB resta solo l'hash
+    return { id, code, expiresAt: expires, maxUses: uses, note: 'Lo ritrovi tra i «Codici attivi» finché è valido. Funziona per chi usa Omar su questo stesso server.' };
   }
   const listInvites = (user, projectId) => {
     access.requireManager(user, projectId);
-    return db.all('SELECT id, created_at, expires_at, revoked_at, max_uses, uses FROM invites WHERE project_id = ? ORDER BY created_at DESC LIMIT 20', projectId)
-      .map((i) => ({ id: i.id, createdAt: i.created_at, expiresAt: i.expires_at, revoked: !!i.revoked_at, maxUses: i.max_uses, uses: i.uses, active: !i.revoked_at && new Date(i.expires_at) > new Date() && i.uses < i.max_uses }));
+    return db.all('SELECT id, code_enc, created_at, expires_at, revoked_at, max_uses, uses FROM invites WHERE project_id = ? ORDER BY created_at DESC LIMIT 20', projectId)
+      .map((i) => { const active = !i.revoked_at && new Date(i.expires_at) > new Date() && i.uses < i.max_uses; return { id: i.id, code: active && i.code_enc ? unseal(i.code_enc) : null, createdAt: i.created_at, expiresAt: i.expires_at, revoked: !!i.revoked_at, maxUses: i.max_uses, uses: i.uses, active }; });
   };
   function revokeInvite(user, projectId, inviteId) {
     access.requireManager(user, projectId);
@@ -104,6 +110,8 @@ function createProjects(ctx) {
     if (!m) throw E.notFound('Richiesta non trovata.');
     db.run('UPDATE memberships SET status = ?, joined_at = ? WHERE id = ?', approve ? 'active' : 'rejected', approve ? now() : null, m.id);
     events.publish(projectId, { type: approve ? 'member.joined' : 'member.rejected', entityType: 'user', entityId: targetUserId, actorId: user.id, data: { displayName: access.userLabel(targetUserId) } });
+    // chi aspettava l'approvazione non è ancora iscritto agli eventi del gruppo: gli arriva un avviso personale
+    notifyUser(targetUserId, { projectId, projectName: access.project(projectId)?.name, status: approve ? 'active' : 'rejected' });
     access.audit(user.id, projectId, approve ? 'membro.approva' : 'membro.rifiuta', { targetUserId });
   }
 
@@ -148,7 +156,10 @@ function createProjects(ctx) {
     return { project: pubProject(p, m), members, pending, participantCount: members.length, onlineCount: members.filter((x) => x.online).length, lastSeq: events.lastSeq(projectId) };
   };
   const mine = (user) => access.myProjects(user.id).map((p) => pubProject(p, { role: p.my_role }));
+  // richieste di ingresso ancora in attesa di approvazione (mostrate nel pannello «Gruppo» di chi le ha fatte)
+  const pendingMine = (user) => db.all(`SELECT p.id, p.name, m.created_at FROM memberships m JOIN projects p ON p.id = m.project_id
+    WHERE m.user_id = ? AND m.status = 'pending' AND p.closed_at IS NULL ORDER BY m.created_at DESC`, user.id).map((r) => ({ id: r.id, name: r.name, requestedAt: r.created_at }));
 
-  return { create, updateSettings, createInvite, listInvites, revokeInvite, regenerateInvite, redeem, decide, revokeMember, leave, setMyProfile, overview, mine, newCode, normalizeCode };
+  return { create, updateSettings, createInvite, listInvites, revokeInvite, regenerateInvite, redeem, decide, revokeMember, leave, setMyProfile, overview, mine, pendingMine, newCode, normalizeCode };
 }
 module.exports = { createProjects, newCode, normalizeCode };

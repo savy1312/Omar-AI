@@ -33,7 +33,7 @@ require('node:test').after(async () => { for (const t of [...booted]) await t.cl
 
 async function boot({ provider = fakeProvider(), env = {}, aiNoDebounce = true, logLevel = 'silent', app = {} } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omar-test-'));
-  const { server, ctx, close } = createApp({ config: { skipEnvFile: true, dataDir: dir, env: { AI_PROVIDER: 'demo', STUDENT_REGISTRATION_CODE: 'CLASSE-123', TEACHER_REGISTRATION_CODE: 'DOCENTI-456', ...env } }, provider, logLevel, aiNoDebounce, ...app });
+  const { server, ctx, close } = createApp({ config: { skipEnvFile: true, dataDir: dir, env: { DESKTOP_ONLY: 'false', AI_PROVIDER: 'demo', STUDENT_REGISTRATION_CODE: 'CLASSE-123', TEACHER_REGISTRATION_CODE: 'DOCENTI-456', ...env } }, provider, logLevel, aiNoDebounce, ...app });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${server.address().port}`;
   const t = { base, ctx, provider, dir, server };

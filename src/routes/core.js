@@ -57,7 +57,7 @@ module.exports = function core(app, ctx) {
     try { return auth.login(req.body?.username, req.body?.password, { userAgent: req.headers['user-agent'] }); } catch (e) { loginLimiter.hit(k); throw e; }
   }));
   api.post('/auth/logout', need, route((req) => { auth.logout(req.token); return { ok: true }; }));
-  api.get('/me', need, route((req) => ({ user: req.user, projects: ctx.projects.mine(req.user) })));
+  api.get('/me', need, route((req) => ({ user: req.user, projects: ctx.projects.mine(req.user), pending: ctx.projects.pendingMine(req.user) })));
 
   // ───── account (pagina dedicata #/account) ─────
   const pwdLimiter = new RateLimiter(5, 10 * 60_000); ctx.limiters.push(pwdLimiter);
