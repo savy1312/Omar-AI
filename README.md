@@ -19,7 +19,7 @@ Dal pacchetto scaricato (`omar-ai-1.0.0.zip`), dopo averlo estratto:
 
 ### Versione web (online, con Groq)
 
-Con l'IA su Groq Omar può anche essere pubblicato online e usato dal browser con un link: procedura passo passo in `docs/PUBBLICARE_ONLINE.md` (Render: `render.yaml` con disco per le classi, `render-free.yaml` gratis per una demo; senza carta: Hugging Face Spaces con `Dockerfile`, § 6).
+Con l'IA su Groq Omar può anche essere pubblicato online e usato dal browser con un link: procedura passo passo in `docs/PUBBLICARE_ONLINE.md` (Render: `render.yaml` con disco per le classi, `render-free.yaml` gratis per una demo; senza carta: Koyeb con `Dockerfile`, § 6).
 
 ### Gruppi tra computer diversi: il «server della classe»
 

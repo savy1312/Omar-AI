@@ -94,25 +94,23 @@ Limiti (accettabili per una demo, non per le classi):
 ## App da installare e versione web insieme
 Il pacchetto da scaricare resta «solo applicazione». La versione web usa `DESKTOP_ONLY=false`, impostato da `render.yaml`.
 
-## 6. Sottodominio gratis senza carta: Hugging Face Spaces (demo)
+## 6. Sottodominio gratis senza carta: Koyeb (demo)
 
-Se Render chiede la carta e non vuoi inserirla, la via gratis-senza-carta è **Hugging Face**:
-sottodominio stabile tipo `https://<tuo-nome>-omar-ai.hf.space`, PC spento, account gratuito.
-Nel progetto ci sono già `Dockerfile`, `.dockerignore` e il modello di README in `huggingface/README.md`.
+Se Render chiede la carta, la via gratis-senza-carta è **Koyeb** (piano free, account via GitHub, nessuna carta):
+sottodominio stabile tipo `https://<app>-<tuo-nome>.koyeb.app`, PC spento.
+Nel progetto c'è già il `Dockerfile` (Koyeb lo compila da solo).
 
-1. Su https://huggingface.co registrati gratis → *Create new → Space* → nome `omar-ai`, SDK **Docker**,
-   hardware *CPU basic* (gratis). Visibilità **Public** se vuoi che gli studenti aprano il link senza login
-   (il codice diventa visibile, ma chiavi e codici restano nei Secrets dello Space, mai nel codice).
-2. Sul PC: `git clone https://huggingface.co/spaces/<tuo-nome>/omar-ai cartella-spazio` → copia dentro
-   TUTTI i file di `AssistenteOmar` **tranne** `.env`, `node_modules/`, `data/`, `.git` → sostituisci il
-   `README.md` con `huggingface/README.md` → *commit* + *push*. Lo Space compila da solo (qualche minuto).
-3. Nello Space: *Settings → Variables and secrets* → aggiungi come **secret**:
-   `AI_API_KEY` (chiave Groq), `STUDENT_REGISTRATION_CODE` (nuovo, non `ER26OCT08`),
-   `TEACHER_REGISTRATION_CODE` (riservato, ≥10 caratteri); come **variabili**: `AI_PROVIDER=openai-compatible`,
-   `AI_BASE_URL=https://api.groq.com/openai/v1`, `AI_MODEL=openai/gpt-oss-20b`,
-   `STUDENT_EMAIL_DOMAIN=itiomar.net`, `ALLOW_OPEN_REGISTRATION=false`.
-   (Porta 7860, `HOST`, `DESKTOP_ONLY=false` e `TRUST_PROXY` sono già nel `Dockerfile`.)
-4. Apri `https://<tuo-nome>-omar-ai.hf.space`, registrati con email `@itiomar.net` e codice studenti, fai una domanda.
+1. Su https://koyeb.com registrati gratis (con GitHub) → *Create Service* → *GitHub* → repo `Omar-AI`,
+   branch `main` → Builder **Dockerfile** (usa quello alla radice) → istanza **Free**, regione vicina (es. Francoforte).
+2. *Environment variables*: `AI_PROVIDER=openai-compatible`, `AI_BASE_URL=https://api.groq.com/openai/v1`,
+   `AI_MODEL=openai/gpt-oss-20b`, `STUDENT_EMAIL_DOMAIN=itiomar.net`, `ALLOW_OPEN_REGISTRATION=false`;
+   come **secret**: `AI_API_KEY` (chiave Groq), `STUDENT_REGISTRATION_CODE` (nuovo, non `ER26OCT08`),
+   `TEACHER_REGISTRATION_CODE` (riservato, ≥10 caratteri).
+   (Porta, `HOST=0.0.0.0`, `DESKTOP_ONLY=false` e `TRUST_PROXY=true` sono già nel `Dockerfile`.)
+3. *Deploy* → qualche minuto → apri l'URL `*.koyeb.app`, registrati con email `@itiomar.net` e codice studenti.
 
-Limiti (demo, non classi): la CPU gratis dorme dopo ~48h senza visite (si risveglia da sola, ~1 minuto);
-il disco è effimero (a ogni ricostruzione si azzerano account e chat); per l'uso reale serve un server con disco.
+Limiti (demo, non classi): l'istanza free dorme senza visite (si risveglia da sola); disco effimero
+(a ogni ridistribuzione si azzerano account e chat); per l'uso reale serve un server con disco.
+
+> Hugging Face Spaces NON va bene: dal 2025 gli Space Docker/Gradio richiedono l'abbonamento PRO
+> (solo gli Static restano gratis, ma non eseguono Node).
