@@ -1,0 +1,112 @@
+{
+  "id": "disegno_3d",
+  "name": "Disegno industriale tridimensionale",
+  "description": "Lettura del disegno tecnico, schizzi e vincoli, modellazione parametrica, parti e assiemi, tolleranze.",
+  "safetyCritical": false,
+  "topics": [
+    {
+      "id": "lettura_disegno",
+      "name": "Lettura del disegno tecnico",
+      "keywords": [
+        "disegno tecnico^3",
+        "proiezion*^2",
+        "proiezioni ortogonali^3",
+        "vista",
+        "viste^2",
+        "sezion*",
+        "cartiglio^3",
+        "assonometri*^3",
+        "quotatura^2",
+        "scala di rappresentazione^2"
+      ]
+    },
+    {
+      "id": "schizzi_quote_vincoli",
+      "name": "Schizzi, quote e vincoli",
+      "keywords": [
+        "schizz*^3",
+        "sketch^3",
+        "quot*",
+        "vincoli geometrici^3",
+        "completamente vincolat*^3",
+        "sottovincolat*^3",
+        "quota pilota^3",
+        "quote pilota^3"
+      ]
+    },
+    {
+      "id": "modellazione_parametrica",
+      "name": "Modellazione parametrica",
+      "keywords": [
+        "parametric*^3",
+        "estrusion*^3",
+        "estrudi^3",
+        "rivoluzion*^2",
+        "feature^2",
+        "albero delle operazioni^3",
+        "raccord*^2",
+        "smuss*^2",
+        "svuotament*^2",
+        "serie circolare^2",
+        "sweep^2",
+        "loft^2"
+      ]
+    },
+    {
+      "id": "parti_assiemi",
+      "name": "Parti e assiemi",
+      "keywords": [
+        "assiem*^3",
+        "vincoli di accoppiamento^3",
+        "esplos*^2",
+        "distinta base^2",
+        "gradi di liberta^2",
+        "componenti"
+      ]
+    },
+    {
+      "id": "strategie_cad",
+      "name": "Strategie di modellazione CAD 3D",
+      "keywords": [
+        "solidworks^4",
+        "inventor^4",
+        "fusion 360^4",
+        "fusion^2",
+        "catia^4",
+        "freecad^4",
+        "onshape^4",
+        "solid edge^4",
+        "creo^3",
+        "strategia di modellazione^3"
+      ]
+    },
+    {
+      "id": "tolleranze_dim_geom",
+      "name": "Tolleranze dimensionali e geometriche",
+      "keywords": [
+        "tolleranze geometriche^4",
+        "tolleranza geometrica^4",
+        "planarit*^3",
+        "perpendicolarit*^3",
+        "gd&t^4",
+        "rugosit*^3",
+        "parallelism*^3",
+        "cilindricit*^3",
+        "concentricit*^3",
+        "tolleranze dimensionali^3"
+      ]
+    }
+  ],
+  "tutorNotes": "Guida a ragionare sulla strategia di modellazione: profilo di base, albero delle operazioni, schizzi completamente vincolati, quote di riferimento vs quote pilota, relazioni parametriche, ordine delle feature, robustezza al cambiamento. Per gli assiemi: vincoli di posizione, gradi di libertà, interferenze. Non produrre modelli completi né sequenze di comandi chiavi in mano per il progetto dello studente; usa esempi analoghi con dimensioni diverse. Il sistema NON analizza file CAD né immagini di disegni: se lo studente li descrive a parole puoi ragionare sulla descrizione.",
+  "typicalUnits": [
+    "mm",
+    "°"
+  ],
+  "keywords": [
+    "disegno^2",
+    "cad^3",
+    "3d^2",
+    "modell*",
+    "tavola"
+  ]
+}

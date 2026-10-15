@@ -1,0 +1,1 @@
+{ "type": "module", "private": true, "description": "I file di questa cartella sono moduli ES per il browser (serve anche ai test che li importano con Node)." }

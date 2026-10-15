@@ -1,0 +1,25 @@
+{
+  "name": "omar-ai",
+  "version": "1.0.0",
+  "description": "Omar AI - tutor IA collaborativo per istituti tecnici (backend Node.js + frontend web)",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "demo": "node --disable-warning=ExperimentalWarning scripts/demo.js",
+    "seed:admin": "node --disable-warning=ExperimentalWarning scripts/create-admin.js",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 \"tests/*.test.js\"",
+    "setup:ollama": "node --disable-warning=ExperimentalWarning scripts/setup-ollama.js",
+    "eval:live": "node --disable-warning=ExperimentalWarning scripts/eval-live.js"
+  },
+  "dependencies": {
+    "express": "^4.22.3",
+    "katex": "^0.16.47",
+    "multer": "^1.4.4",
+    "pdf-parse": "^1.1.1",
+    "ws": "^8.22.0"
+  }
+}

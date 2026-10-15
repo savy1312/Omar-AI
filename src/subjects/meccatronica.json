@@ -1,0 +1,124 @@
+{
+  "id": "meccatronica",
+  "name": "Meccatronica",
+  "description": "Sensori e attuatori, automazione, PLC, sistemi elettropneumatici ed elettroidraulici.",
+  "safetyCritical": true,
+  "topics": [
+    {
+      "id": "sensori_attuatori",
+      "name": "Sensori e attuatori",
+      "keywords": [
+        "sensor*^2",
+        "fotocellul*^2",
+        "finecors*^2",
+        "induttiv*",
+        "capacitiv*",
+        "encoder^2",
+        "attuator*^2",
+        "trasduttor*^2",
+        "termocoppi*^2",
+        "motore passo passo^2",
+        "servomotor*^2"
+      ]
+    },
+    {
+      "id": "automazione",
+      "name": "Sistemi di automazione",
+      "keywords": [
+        "automazion*^3",
+        "nastro trasportator*^2",
+        "impiant*",
+        "ciclo automatico^2",
+        "robot*^2",
+        "scada^2",
+        "hmi^2",
+        "linea di produzione"
+      ]
+    },
+    {
+      "id": "plc",
+      "name": "Logica e programmazione PLC",
+      "keywords": [
+        "plc^4",
+        "ladder^4",
+        "grafcet^3",
+        "structured text^3",
+        "kop^2",
+        "fbd^2",
+        "contatto",
+        "bobina^2",
+        "temporizzator*^2",
+        "timer",
+        "contator*^2",
+        "merker^3",
+        "autoritenuta^3",
+        "self holding^3",
+        "tia portal^3",
+        "siemens",
+        "ingressi e uscite^2",
+        "ton",
+        "tof"
+      ]
+    },
+    {
+      "id": "elettropneumatica",
+      "name": "Sistemi elettropneumatici ed elettroidraulici",
+      "keywords": [
+        "pneumatic*^3",
+        "elettropneumatic*^4",
+        "elettrovalvol*^3",
+        "cilindr*^2",
+        "valvol*^2",
+        "compressor*",
+        "oleodinamic*^3",
+        "idraulic*^2",
+        "aria compressa^2",
+        "5/2^2",
+        "3/2^2",
+        "monostabil*^2",
+        "bistabil*^2",
+        "doppio effetto^2",
+        "semplice effetto^2"
+      ]
+    },
+    {
+      "id": "schemi_sequenze",
+      "name": "Schemi e sequenze operative",
+      "keywords": [
+        "sequenz*^2",
+        "a+ b+^3",
+        "a+",
+        "b+",
+        "diagramma spazio fase^3",
+        "spazio-fase^3",
+        "diagramma delle fasi^3",
+        "schema elettrico^2",
+        "schema funzional*^2",
+        "ciclo quadro^3"
+      ]
+    }
+  ],
+  "tutorNotes": "Per esercizi PLC guida prima l'analisi: elenco ingressi, uscite, condizioni di avvio/arresto, sequenza (diagramma di stato o diagramma spazio-fase), poi la scelta del linguaggio (ladder, ST, FBD). Fai ragionare su priorità di arresto/emergenza, self-holding, fronti, temporizzatori. Per elettropneumatica: simbologia, elettrovalvole mono/bistabili, finecorsa, sequenze A+ B+ A- B-, conflitti di segnale. Verifica sempre tensioni di alimentazione, pressioni (bar) e unità. Non guidare MAI a escludere interblocchi, arresti di emergenza, ripari o protezioni: spiega la funzione di sicurezza e rimanda al docente.",
+  "typicalUnits": [
+    "V",
+    "A",
+    "bar",
+    "Pa",
+    "N",
+    "mm",
+    "s",
+    "ms"
+  ],
+  "keywords": [
+    "meccatronic*^3",
+    "interblocc*^2",
+    "emergenza",
+    "fungo",
+    "rele^2",
+    "elettric*",
+    "circuit*",
+    "corrente",
+    "arduino^2",
+    "automatism*"
+  ]
+}

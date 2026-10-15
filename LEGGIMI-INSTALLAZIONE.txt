@@ -1,0 +1,39 @@
+OMAR AI 1.0.0 - INSTALLAZIONE
+ITIS Omar, sede di Oleggio
+
+Omar AI gira sul tuo computer: conversazioni e file restano li' e non vengono
+inviati a servizi esterni.
+
+PRIMA DI TUTTO: ESTRAI LO .ZIP
+Tasto destro sul file scaricato > "Estrai tutto..." (su Mac basta un doppio clic).
+
+INSTALLA (crea l'icona "Omar AI" sul Desktop)
+- Windows: doppio clic su  INSTALLA-WINDOWS.bat
+  Se compare "Windows ha protetto il PC": "Ulteriori informazioni" > "Esegui comunque".
+  Omar viene installato per il tuo utente (senza permessi di amministratore) e l'icona
+  compare sul Desktop e nel menu Start.
+- macOS: tasto destro su  installa-mac.command  > "Apri" (la prima volta macOS chiede conferma).
+- Linux: da terminale, nella cartella estratta:  ./installa-linux.sh
+
+COSA SERVE (una volta sola)
+1. Node.js 22.13 o successivo  ->  https://nodejs.org
+2. Ollama (il motore IA locale) ->  https://ollama.com
+Al primo avvio Omar scarica i modelli IA (circa 8 GB in totale).
+Consigliati 16 GB di RAM; con una scheda video le risposte sono molto piu' veloci.
+
+USARE OMAR
+Doppio clic sull'icona "Omar AI": si apre una finestra nera (e' il "motore" di Omar:
+non chiuderla) e poco dopo la finestra di Omar. Chiudendo la finestra nera Omar si spegne.
+
+PRIMA DI USARLO CON LA CLASSE
+Apri il file .env nella cartella di installazione
+(Windows: %LOCALAPPDATA%\Programs\OmarAI) e imposta i codici di registrazione:
+  STUDENT_REGISTRATION_CODE=...   (il codice che darai agli studenti)
+  TEACHER_REGISTRATION_CODE=...   (il codice per i docenti, da tenere riservato)
+Poi riavvia Omar. Gli altri dispositivi della rete scolastica si collegano seguendo
+docs/RETE_LOCALE.md.
+
+AGGIORNARE
+Scarica la nuova versione e lancia di nuovo l'installazione: .env e dati restano intatti.
+
+Tutte le istruzioni: README.md

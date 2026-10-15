@@ -1,0 +1,12 @@
+{
+  "cleanUrls": true,
+  "headers": [
+    { "source": "/omar-ai-(.*).zip", "headers": [
+      { "key": "Content-Type", "value": "application/zip" },
+      { "key": "Content-Disposition", "value": "attachment; filename=\"omar-ai-1.0.0.zip\"" },
+      { "key": "X-Content-Type-Options", "value": "nosniff" } ] },
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" } ] }
+  ]
+}

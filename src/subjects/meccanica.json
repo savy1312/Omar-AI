@@ -1,0 +1,128 @@
+{
+  "id": "meccanica",
+  "name": "Meccanica",
+  "description": "Statica, cinematica, dinamica, resistenza dei materiali, organi di macchine, tolleranze.",
+  "safetyCritical": false,
+  "topics": [
+    {
+      "id": "statica",
+      "name": "Statica: forze, momenti, equilibrio",
+      "keywords": [
+        "statica^3",
+        "moment*^2",
+        "equilibri*^2",
+        "vincol*",
+        "reazion*^2",
+        "vincolar*^2",
+        "leva",
+        "leve",
+        "baricentr*^2",
+        "cerniera^2",
+        "carrello",
+        "incastro^2",
+        "trave^2",
+        "travi^2",
+        "braccio"
+      ]
+    },
+    {
+      "id": "cinematica_dinamica",
+      "name": "Cinematica e dinamica",
+      "keywords": [
+        "cinematic*^3",
+        "dinamic*^2",
+        "velocita",
+        "accelerazion*^2",
+        "moto rettilineo^2",
+        "moto circolare^2",
+        "inerzi*",
+        "energia cinetica^2",
+        "quantita di moto^2",
+        "attrito^2",
+        "caduta",
+        "lancio",
+        "traiettori*"
+      ]
+    },
+    {
+      "id": "resistenza_materiali",
+      "name": "Resistenza dei materiali",
+      "keywords": [
+        "resistenza dei materiali^3",
+        "sollecitazion*^2",
+        "trazion*^2",
+        "compression*",
+        "flession*^2",
+        "torsion*^2",
+        "taglio",
+        "snervament*^2",
+        "coefficiente di sicurezza^2",
+        "deformazion*",
+        "sigma",
+        "mpa^2",
+        "modulo di young^3",
+        "tension* ammissibil*^3",
+        "sezione resistente^2"
+      ]
+    },
+    {
+      "id": "trasmissioni_organi",
+      "name": "Trasmissioni e organi di macchine",
+      "keywords": [
+        "ingranagg*^3",
+        "ruote dentate^3",
+        "ruota dentata^3",
+        "cinghi*^2",
+        "puleggi*^2",
+        "albero",
+        "alberi",
+        "cuscinett*^2",
+        "rapporto di trasmissione^3",
+        "giunt*",
+        "frizion*^2",
+        "catena",
+        "riduttor*^2",
+        "chiavett*^2",
+        "coppia motrice^2",
+        "trasmission*^2",
+        "organi di macchine^3"
+      ]
+    },
+    {
+      "id": "tolleranze_accoppiamenti",
+      "name": "Tolleranze e accoppiamenti",
+      "keywords": [
+        "tolleranz*^2",
+        "accoppiament*^2",
+        "gioco",
+        "interferenza",
+        "foro base^3",
+        "albero base^3",
+        "iso 286^3",
+        "h7^2",
+        "g6^2",
+        "scostament*^2"
+      ]
+    }
+  ],
+  "tutorNotes": "Per ogni esercizio fai esplicitare: schema, sistema di riferimento, ipotesi (corpo rigido, vincoli, carichi), incognite, equazioni di equilibrio, UNITÀ DI MISURA coerenti (N, mm, N·mm, MPa = N/mm²). Controlla la plausibilità dei risultati (ordini di grandezza, segni, coefficienti di sicurezza). Distingui coppia (N·m) da forza (N) e da potenza (W); non confrontare grandezze di natura diversa. Per gli accoppiamenti non inventare valori tabellari: usali solo se presenti nei materiali.",
+  "typicalUnits": [
+    "N",
+    "N·m",
+    "mm",
+    "MPa",
+    "kW",
+    "rpm",
+    "rad/s"
+  ],
+  "keywords": [
+    "meccanica^2",
+    "forz*",
+    "carich*",
+    "acciai*",
+    "newton",
+    "kn",
+    "n*m",
+    "nm"
+  ]
+}

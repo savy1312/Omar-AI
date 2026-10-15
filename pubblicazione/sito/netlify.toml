@@ -1,0 +1,16 @@
+# Configurazione Netlify per la pagina di download di Omar AI (sito statico, nessuna build).
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/omar-ai-*.zip"
+  [headers.values]
+    Content-Type = "application/zip"
+    Content-Disposition = "attachment; filename=\"omar-ai-1.0.0.zip\""
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
