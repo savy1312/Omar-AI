@@ -30,6 +30,16 @@ function setEnv(text, pairs) {
   return out;
 }
 (async () => {
+  // provider esterno già configurato (es. Groq): non tocco nulla, Ollama non serve
+  try {
+    const cur = fs.readFileSync(ENV, 'utf8');
+    const base = (cur.match(/^AI_BASE_URL=(\S+)/m) || [])[1] || '';
+    const prov = ((cur.match(/^AI_PROVIDER=(\S+)/m) || [])[1] || '').toLowerCase();
+    if (prov === 'anthropic' || (base && !/^https?:\/\/(localhost|127\.|10\.|192\.168\.)/i.test(base))) {
+      console.log(`✓ Provider IA esterno già configurato (${prov === 'anthropic' ? 'Anthropic' : base}): Ollama non serve, lascio il .env com'è.`);
+      process.exit(0);
+    }
+  } catch { /* nessun .env: si configura Ollama */ }
   let tags;
   try { tags = await getJson(`${HOST}/api/tags`); }
   catch (e) {

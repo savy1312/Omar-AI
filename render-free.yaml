@@ -1,0 +1,48 @@
+# Omar AI su Render PIANO FREE (https://render.com) — sottodominio gratis tipo https://omar-ai.onrender.com.
+# Uso: Render → New → Blueprint → seleziona questo file (render-free.yaml) invece di render.yaml.
+# I valori segreti (chiave Groq, codici di registrazione) NON sono qui: Render li chiede alla creazione (sync: false).
+#
+# LIMITI del piano gratuito (buono per una DEMO, non per le classi):
+# - il servizio va in pausa dopo ~15 minuti senza visite: la prima apertura richiede ~50 secondi;
+# - 750 ore al mese incluse (bastano per un servizio solo);
+# - NESSUN disco: a ogni riavvio si azzerano account, chat, gruppi e file caricati.
+# Per l'uso reale in classe usa render.yaml (piano Starter con disco persistente).
+services:
+  - type: web
+    name: omar-ai
+    runtime: node
+    region: frankfurt            # dati in Europa (Germania)
+    plan: free                   # completamente gratuito (con i limiti scritti qui sopra)
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /desktop/ping
+    # niente disk: sul piano free non esiste; DATA_DIR resta ./data (effimero)
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DESKTOP_ONLY        # versione web: si apre dal browser
+        value: "false"
+      - key: TRUST_PROXY         # Render sta davanti all'app: serve per i limiti anti-abuso per indirizzo
+        value: "true"
+      - key: AI_PROVIDER
+        value: openai-compatible
+      - key: AI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: AI_MODEL
+        value: openai/gpt-oss-20b
+      - key: AI_VISION           # true solo dopo aver scelto un modello Groq che legge immagini (AI_VISION_MODEL)
+        value: "false"
+      - key: AI_API_KEY
+        sync: false
+      - key: STUDENT_REGISTRATION_CODE
+        sync: false
+      - key: TEACHER_REGISTRATION_CODE
+        sync: false
+      - key: STUDENT_EMAIL_DOMAIN
+        value: itiomar.net
+      - key: ALLOW_OPEN_REGISTRATION
+        value: "false"
