@@ -1,0 +1,117 @@
+/* ───────── Omar AI — layout «Claude»: barra laterale + colonna di lettura ─────────
+   Caricato per ultimo: vince su app.css / features.css / theme.css / nextgen.css. */
+
+/* layout: sidebar fissa + contenuto */
+#island.side{position:fixed;inset:0 auto 0 0;width:288px;z-index:60;display:flex;flex-direction:column;
+  background:var(--panel);border-right:1px solid var(--line);color:var(--ink)}
+#app{margin-left:288px;min-height:100vh}
+body[data-auth="0"] #app{margin-left:0}
+body[data-auth="0"] #island.side{display:none}
+
+/* interno sidebar */
+.side-toggle{display:none}
+.side-inner{flex:1;min-height:0;display:flex;flex-direction:column;gap:.35rem;padding:.9rem .8rem;overflow-y:auto;scrollbar-width:thin}
+.side-brand{display:flex;align-items:center;gap:.6rem;padding:.15rem .5rem .7rem}
+.side-logo{width:30px;height:30px;border-radius:50%;background:#fff;flex:none}
+.side-name{font:600 1.02rem Poppins,sans-serif;letter-spacing:.01em}
+.side-proj{margin-left:auto;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font:600 .68rem/1 Poppins,sans-serif;color:var(--brand);background:var(--brand-soft);
+  border:1px solid var(--line);padding:.3rem .55rem;border-radius:999px}
+.side-new{display:flex;align-items:center;gap:.55rem;width:100%;border:1px solid var(--line);border-radius:12px;
+  background:transparent;color:var(--ink);padding:.62rem .8rem;font:500 .9rem Poppins,sans-serif;cursor:pointer;
+  transition:background var(--fast,150ms),border-color var(--fast,150ms)}
+.side-new:hover{background:var(--soft);border-color:var(--line-hi)}
+
+/* voci di navigazione */
+.side-nav{display:flex;flex-direction:column;gap:1px;margin-top:.35rem}
+.side-link{display:flex;align-items:center;gap:.65rem;padding:.5rem .7rem;border-radius:10px;color:var(--muted);
+  text-decoration:none;font:500 .9rem Poppins,sans-serif;border:0;background:transparent;width:100%;cursor:pointer;text-align:left}
+.side-link svg{flex:none}
+.side-link:hover{background:var(--soft);color:var(--ink)}
+.side-link[aria-current=page]{background:var(--soft2);color:var(--ink)}
+.side-link.has-dot{position:relative}
+.side-link.has-dot::after{content:"";position:absolute;right:.7rem;top:50%;translate:0 -50%;width:7px;height:7px;border-radius:50%;background:var(--brand)}
+
+/* recenti */
+.side-recents{margin-top:.9rem;display:flex;flex-direction:column;min-height:0}
+.side-sec-head{display:flex;align-items:center;justify-content:space-between;padding:0 .7rem .35rem}
+.side-sec-head strong{font:600 .74rem Poppins,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--faint,var(--muted))}
+.side-mini{font-size:.78rem;color:var(--brand);text-decoration:none}
+.side-mini:hover{text-decoration:underline}
+.side-hx{min-height:0}
+.side-hx .hx-list{max-height:34vh;overflow-y:auto;scrollbar-width:thin}
+.side-fill{flex:1;min-height:.5rem}
+
+/* sezione espandibile (gruppo / spiegami questo) */
+.side-expand{border-top:1px solid var(--line);margin-top:.4rem;padding-top:.6rem;max-height:44vh;overflow-y:auto}
+.side-expand .isl-head strong{font-size:.92rem}
+.side-expand .isl-ico{background:var(--soft);color:var(--ink)}
+.side-expand .isl-pill{background:var(--soft);color:var(--ink)}
+.side-expand .isl-pill:hover{background:var(--soft2)}
+.side-expand .isl-pill.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.side-expand .isl-seg{background:var(--soft)}
+.side-expand .isl-seg button{color:var(--muted)}
+.side-expand .isl-seg button[aria-pressed=true]{background:var(--panel);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.side-expand .isl-quote{background:var(--soft);color:var(--ink)}
+.side-expand .isl-note{color:var(--muted)}
+.side-expand .isl-err{background:var(--bad-soft);color:var(--bad)}
+.side-expand textarea{background:var(--soft);border-color:var(--line);color:var(--ink)}
+
+/* piede: stato, lavori, azioni, utente */
+.side-foot{border-top:1px solid var(--line);padding-top:.6rem;display:flex;flex-direction:column;gap:.5rem}
+.side-statusrow{display:flex;align-items:center;gap:.5rem;padding:0 .4rem;min-height:26px}
+.side-dot{flex:none;width:10px;height:10px;border-radius:50%;border:0;padding:0;background:#2FA36B;cursor:default}
+.side[data-health=bad] .side-dot{cursor:pointer}
+.side-status{font-size:.76rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side-aux{display:flex;flex-direction:column;gap:.3rem}
+.side-aux:empty{display:none}
+.isl-pill-aux{display:flex;align-items:center;gap:.45rem;border-radius:10px;background:var(--soft);color:var(--ink);
+  font:500 .76rem Poppins,sans-serif;padding:.42rem .6rem;max-width:100%}
+.isl-pill-aux .ipa-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.isl-pill-aux.voice{color:var(--bad)}
+.ipa-spin{width:12px;height:12px;flex:none;border-radius:50%;border:2px solid var(--line-hi);border-top-color:var(--brand);animation:sideSpin .8s linear infinite}
+@keyframes sideSpin{to{transform:rotate(360deg)}}
+.side-quick{display:flex;gap:.25rem;padding:0 .2rem}
+.side-icon{flex:1;display:grid;place-items:center;min-height:34px;border-radius:9px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.side-icon:hover{background:var(--soft);color:var(--ink)}
+.side-user{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;border-radius:10px;color:var(--ink);text-decoration:none;font:500 .88rem Poppins,sans-serif}
+.side-user:hover{background:var(--soft)}
+.side-username{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#island.side.hot{box-shadow:inset 0 0 0 2px var(--brand)}
+
+/* tooltip */
+.isl-tip{position:fixed;z-index:70;pointer-events:none;white-space:nowrap;font:500 .76rem Poppins,sans-serif;
+  color:var(--ink);background:var(--panel);border:1px solid var(--line-hi);padding:.45rem .6rem;border-radius:9px;
+  opacity:0;transform:translateY(-50%);transition:opacity .15s}
+.isl-tip.on{opacity:1}
+.isl-tip kbd{font:500 .68rem var(--font-mono,monospace);border:1px solid var(--line-hi);border-radius:4px;padding:0 .25rem;margin-left:.35rem;color:var(--muted)}
+
+/* ───────── colonna di lettura stile Claude ───────── */
+#main{max-width:100%}
+.chat,.sheet{max-width:48rem;margin:1.2rem auto;padding-inline:1.2rem}
+.sheet[class*=hydra],.sheet-prova,.sheet-cronologia,.sheet-account{max-width:64rem}
+/* assistente: testo pieno, niente bolla */
+.msg.assistant{background:transparent!important;border:0!important;box-shadow:none!important;padding-inline:0}
+/* utente: bolla a destra */
+.msg.user{display:flex;justify-content:flex-end;background:transparent!important;border:0!important;box-shadow:none!important;padding-inline:0}
+.msg.user>.md,.msg.user>div{max-width:85%;background:var(--soft2);border-radius:18px;padding:.55rem .95rem}
+/* testata chat sobria */
+.chathead{border:0;background:transparent;box-shadow:none;position:static}
+/* home centrata */
+.hero{max-width:44rem;margin:9vh auto 0;text-align:center}
+.hero h1{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:500}
+.composer-card{border-radius:20px;box-shadow:0 8px 28px -12px rgba(0,0,0,.25)}
+:root[data-theme=light] .composer-card{background:#fff;border-color:var(--line-hi)}
+
+/* ───────── mobile: sidebar a scomparsa ───────── */
+@media (max-width:960px){
+  #app{margin-left:0}
+  #island.side{transform:translateX(-102%);transition:transform .25s ease;box-shadow:none}
+  #island.side[data-open-m="1"]{transform:none;box-shadow:24px 0 48px -16px rgba(0,0,0,.35)}
+  .side-toggle{display:grid;place-items:center;position:fixed;top:.7rem;left:.7rem;z-index:65;
+    width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+}
+@media (prefers-reduced-motion:reduce){
+  #island.side{transition:none}
+  .ipa-spin{animation:none}
+}
