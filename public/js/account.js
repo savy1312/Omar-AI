@@ -104,21 +104,14 @@ export async function renderAccount(main, S) {
   // ── preferenze ──
   const seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Tema' }, [['dark', 'Scuro', 'moon'], ['light', 'Chiaro', 'sun']].map(([v, l, ic]) => h('button', { type: 'button', 'aria-pressed': String(S.theme?.get() === v), onclick: (e) => { S.theme.set(v); for (const b of seg.children) b.setAttribute('aria-pressed', String(b === e.currentTarget)); } }, icon(ic, 16), l)));
   const voice = S.voice;
-  const autoRead = h('input', { type: 'checkbox', id: 'acc-tts', checked: !!voice?.prefs.autoRead, disabled: !voice?.canSpeak, onchange: (e) => voice.setPref('autoRead', e.target.checked) });
-  const rate = h('input', { type: 'range', id: 'acc-rate', min: 0.7, max: 1.4, step: 0.05, value: voice?.prefs.rate || 0.92, disabled: !voice?.canSpeak, oninput: (e) => voice.setPref('rate', Number(e.target.value)) });
-  const voiceLine = h('p', { class: 'small muted' });
-  const voiceInfo = () => { if (!voice?.canSpeak) return; const n = voice.voiceName(); voiceLine.textContent = n ? `Voce in uso: ${n}${voice.prefs.calm !== false && !voice.hasMale() ? ' — su questo computer non c’è una voce maschile italiana: in Windows aggiungila da Impostazioni › Ora e lingua › Voce, oppure apri Omar con Edge (voce «Diego»).' : ''}` : 'Le voci del computer si stanno caricando…'; };
-  voiceInfo(); try { speechSynthesis.addEventListener('voiceschanged', voiceInfo); } catch { /* ignora */ }
+  // (lettura ad alta voce rimossa: non restano elementi di voce da costruire qui)
   const prefs = h('section', { class: 'acc-card', 'aria-labelledby': 'acc-pref' }, [h('h2', { id: 'acc-pref' }, icon('sun', 19), 'Preferenze'),
     h('p', { class: 'dlg-label', text: 'Tema' }), seg,
     h('p', { class: 'dlg-label', text: 'Classe e lavagna' }),
     h('label', { class: 'radio', for: 'acc-lim' }, h('input', { type: 'checkbox', id: 'acc-lim', checked: limOn(), onchange: (e) => setLim(e.target.checked) }), 'Modalità LIM / proiettore: testo più grande e contrasto alto'),
     h('label', { class: 'radio', for: 'acc-snd' }, h('input', { type: 'checkbox', id: 'acc-snd', checked: soundOn(), onchange: (e) => setSound(e.target.checked) }), 'Suoni dell’interfaccia (clic, avvisi, contributi dei compagni)'),
-    h('p', { class: 'dlg-label', text: 'Omar Voice' }),
-    voice?.canSpeak ? [h('label', { class: 'radio', for: 'acc-tts' }, autoRead, 'Leggi ad alta voce le risposte appena arrivano'),
-      h('label', { class: 'radio', for: 'acc-calm' }, h('input', { type: 'checkbox', id: 'acc-calm', checked: voice.prefs.calm !== false, onchange: (e) => { voice.setPref('calm', e.target.checked); voiceInfo(); } }), 'Voce calma: maschile, un po’ più lenta e più bassa'),
-      voiceLine, h('label', { for: 'acc-rate', text: 'Velocità della voce' }), rate,
-      h('button', { class: 'btn sm', type: 'button', onclick: () => voice.speak('Ciao! Sono Omar. Ti leggo le risposte con questa voce.') }, icon('volume', 15), 'Prova la voce')] : h('p', { class: 'small muted', text: 'Questo browser non supporta la lettura ad alta voce.' }),
+    h('label', { class: 'radio', for: 'acc-mic' }, h('input', { type: 'checkbox', id: 'acc-mic', checked: false, disabled: true }), 'Scrivere a voce: usa il microfono accanto al campo di scrittura'),
+    // NB: la lettura ad alta voce (Omar Voice) è stata tolta dall'interfaccia: restano solo tema, LIM e suoni.
     h('p', { class: 'small muted', text: voice?.canListen ? 'Dettatura: premi il microfono accanto al campo di scrittura. Nota: in Chrome ed Edge il riconoscimento vocale è svolto dai server di Google o Microsoft, fuori dalla scuola.' : 'La dettatura vocale non è supportata da questo browser (prova Chrome o Edge).' }),
   ]);
 
