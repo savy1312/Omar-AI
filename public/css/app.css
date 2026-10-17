@@ -115,7 +115,7 @@ textarea{resize:vertical} label{display:block;font-weight:600;margin:.7rem 0 .25
 main#main{flex:1;display:flex;flex-direction:column;min-height:0;padding:124px 1.2rem 1.4rem;outline:none;width:100%}
 #banners{position:fixed;top:96px;left:0;right:0;z-index:40;display:flex;flex-direction:column;align-items:center;gap:.35rem;pointer-events:none}
 .banner{display:none;pointer-events:auto;padding:.28rem .95rem;font-size:.78rem;border-radius:999px;backdrop-filter:blur(12px);max-width:92vw;text-align:center} .banner.show{display:block}
-.banner.sim{background:rgba(110,50,160,.55);color:#f0dcff} .banner.ext{background:rgba(120,90,0,.55);color:#ffe9a8} .banner.offline{background:rgba(160,30,24,.6);color:#ffd9d6}
+.banner.sim{background:rgba(110,50,160,.55);color:#f0dcff} .banner.ext{display:none} .banner.offline{background:rgba(160,30,24,.6);color:#ffd9d6}
 .sheet{width:100%;max-width:980px;margin:0 auto;background:var(--glass);backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);border:1px solid var(--glass-line);border-radius:30px;padding:1.2rem 1.4rem 1.6rem;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .page{width:100%}
 #toasts{position:fixed;right:1rem;top:104px;display:flex;flex-direction:column;gap:.5rem;z-index:70} .toast{background:#111;color:#fff;padding:.65rem 1rem;border-radius:16px;max-width:340px;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:islIn .4s var(--spring) both} .toast.bad{background:#b3261e}
@@ -143,7 +143,7 @@ main#main{flex:1;display:flex;flex-direction:column;min-height:0;padding:124px 1
 .cf-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px} .cf-s{color:#6b6e77;font-size:.74rem;white-space:nowrap}
 .cfile button{border:0;background:transparent;border-radius:50%;width:22px;height:22px;display:grid;place-items:center;color:#555;flex:none} .cfile button:hover{background:#dfe2e8}
 .cpop{position:absolute;left:10px;bottom:calc(100% + 8px);z-index:20;width:min(360px,calc(100% - 20px));background:#fff;color:#1b1b1f;border-radius:22px;box-shadow:0 18px 50px rgba(0,0,0,.4);padding:12px 14px 14px;animation:islIn .35s var(--spring) both}
-.cpop[hidden]{display:none} .cpop.down{bottom:auto;top:calc(100% + 8px)} .cpop.plus{padding:8px;width:min(350px,calc(100% - 20px))}
+.cpop[hidden]{display:none} .cpop.down{bottom:auto;top:calc(100% + 8px)} .cpop.plus{padding:8px;width:min(350px,calc(100% - 20px));overflow-y:auto;overscroll-behavior:contain}
 .cpop label{color:#5b5e66;font:600 .74rem Poppins,sans-serif;margin:.6rem 0 .2rem;text-transform:uppercase;letter-spacing:.04em} .cpop label.chk{display:flex;gap:.5rem;align-items:center;text-transform:none;letter-spacing:0;font:400 .88rem "Open Sans",sans-serif;color:#33363d}
 .cpop select{background:#f3f4f7;border:0;color:#1b1b1f;border-radius:12px} .cpop select option{background:#fff;color:#1b1b1f}
 .cpop .cmenu{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;border-radius:14px;padding:9px 10px;color:#1b1b1f;text-align:left;transition:background .15s} .cpop .cmenu:hover,.cpop .cmenu:focus-visible{background:#f1f2f4} .cpop .cmenu:focus-visible{outline:2px solid #ffb454;outline-offset:-2px}

@@ -1,7 +1,10 @@
 // Avvio, autenticazione, struttura della pagina, router e barra "Collega un dispositivo".
-import { h, add, clear, $, toast, dialog, confirmDialog, fmtDate } from './dom.js';
+import { h, add, clear, $, toast, dialog, confirmDialog, fmtDate, registerBlock } from './dom.js';
 import { api, get, post, patch, del, auth, ApiError, createRealtime } from './api.js';
 import { renderHome, renderChat } from './chat.js';
+import { play } from './sound.js';
+import { createSearch } from './search.js';
+import { initLim, setLim, limOn } from './lim.js';
 import { renderMaterials } from './materials.js';
 import { renderGroup } from './group.js';
 import { renderTeacher } from './teacher.js';
@@ -13,7 +16,12 @@ import { renderHistory } from './history.js';
 import { renderProjects } from './projects.js';
 import { renderPlanner } from './planner.js';
 import { renderBulletin } from './bulletin.js';
+import { renderProva } from './prova.js';
 import { createTools } from './tools.js';
+import { renderSim } from './sims.js';
+import { createRadar } from './airdrop.js';
+import { showRecoveryCode } from './recovery.js';
+registerBlock('sim', (src) => renderSim(src));
 import { createVoice } from './voice.js';
 
 const PKEY = 'omar.project';
@@ -43,7 +51,9 @@ async function boot() {
   const root = document.getElementById('app');
   S.voice = createVoice();
   S.tools = createTools({ S });
-  island = createIsland({ S, navigate: go, renderGroup: renderGroupInto, toast, logout, theme: THEME, subjectId: () => S.currentSubject, tutorial: () => openTutorial(true), tools: S.tools });
+  initLim();
+  S.search = createSearch({ S, navigate: (hash) => go(hash) });
+  island = createIsland({ S, navigate: go, renderGroup: renderGroupInto, toast, logout, theme: THEME, subjectId: () => S.currentSubject, tutorial: () => openTutorial(true), tools: S.tools, search: S.search, lim: { on: limOn, set: setLim } });
   S.theme = THEME; S.logout = logout; S.replayTutorial = () => openTutorial(true);
   S.openGroupPanel = () => island.openPanel('group');
   S.setBulletinUnread = (n) => island?.setBadge('bulletin-board', n > 0);
@@ -63,10 +73,25 @@ async function boot() {
   showAuth();
 }
 
+// password temporanea (impostata da chi gestisce il computer): prima di tutto se ne sceglie una nuova
+async function forcedPasswordChange() {
+  for (;;) {
+    const cur = h('input', { type: 'password', id: 'fp0', autocomplete: 'current-password' }); const nw = h('input', { type: 'password', id: 'fp1', autocomplete: 'new-password' }); const nw2 = h('input', { type: 'password', id: 'fp2', autocomplete: 'new-password' });
+    const err = h('div', { class: 'err', role: 'alert', hidden: true });
+    const ok = await dialog('Scegli una nuova password', h('div', null, [h('p', { text: 'Stai usando una password temporanea. Per continuare scegline una tua.' }),
+      h('label', { for: 'fp0', text: 'Password temporanea' }), cur, h('label', { for: 'fp1', text: `Nuova password (almeno ${S.info?.auth?.minPasswordLength || 10} caratteri)` }), nw, h('label', { for: 'fp2', text: 'Ripeti la nuova password' }), nw2, err]), [
+      { label: 'Salva la password', primary: true, onClick: async () => {
+        if (nw.value !== nw2.value) { err.textContent = 'Le due password non coincidono.'; err.hidden = false; return false; }
+        try { await post('/account/password', { currentPassword: cur.value, newPassword: nw.value, signOutOthers: true }); return true; } catch (e) { err.textContent = e.message; err.hidden = false; return false; }
+      } }]);
+    if (ok) { S.user.mustChangePassword = false; toast('Password salvata.'); try { const r = await post('/account/recovery', { currentPassword: nw.value }); await showRecoveryCode(r.code, { username: S.user.username }); } catch { /* si crea anche dall'Account */ } return; }
+  }
+}
 async function startSession() {
   const me = await get('/me'); S.user = me.user; S.projects = me.projects; S.pendingJoins = me.pending || [];
   const sub = await get('/subjects'); S.subjects = sub.subjects; S.modes = sub.modes; S.levels = sub.levels;
   buildShell();
+  if (S.user.mustChangePassword) await forcedPasswordChange();
   S.rt.start();
   const saved = load(PKEY); const p = S.projects.find((x) => x.id === saved);
   if (p) await S.setActive(p); else renderBar();
@@ -128,13 +153,22 @@ function showAuth(message) {
     const err = h('div', { class: 'err', role: 'alert', hidden: true });
     const f = {
       username: h('input', { type: 'text', id: 'u', autocomplete: 'username', required: true, autocapitalize: 'none', spellcheck: false, placeholder: domain ? `nome.cognome@${domain}` : 'nome utente' }), display: h('input', { type: 'text', id: 'dn', autocomplete: 'name', maxLength: 40, placeholder: 'es. Elia' }),
-      password: h('input', { type: 'password', id: 'pw', autocomplete: mode === 'login' ? 'current-password' : 'new-password', required: true }), code: h('input', { type: 'text', id: 'rc', autocomplete: 'off', autocapitalize: 'characters' }),
+      password: h('input', { type: 'password', id: 'pw', autocomplete: mode === 'login' ? 'current-password' : 'new-password', required: true, minLength: mode === 'login' ? 1 : (S.info?.auth?.minPasswordLength || 10) }), code: h('input', { type: 'text', id: 'rc', autocomplete: 'off', autocapitalize: 'characters' }),
+      rcode: h('input', { type: 'text', id: 'rk', autocomplete: 'off', autocapitalize: 'characters', spellcheck: false, placeholder: 'XXXX-XXXX-XXXX-XXXX', style: 'letter-spacing:.08em', required: true }),
+      pw2: h('input', { type: 'password', id: 'pw2', autocomplete: 'new-password', required: true }),
     };
     const submit = async (e) => {
       e.preventDefault(); err.hidden = true;
       try {
+        if (mode === 'recover') {
+          if (f.password.value !== f.pw2.value) throw new Error('Le due password non coincidono.');
+          const r = await post('/auth/recover', { username: f.username.value, code: f.rcode.value, newPassword: f.password.value });
+          auth.token = r.token; await showRecoveryCode(r.recoveryCode, { username: r.user.username, reason: 'used' }); await startSession(); return;
+        }
         const body = mode === 'login' ? { username: f.username.value, password: f.password.value } : { username: f.username.value, displayName: f.display.value, password: f.password.value, registrationCode: f.code.value };
-        const r = await post(mode === 'login' ? '/auth/login' : '/auth/register', body); auth.token = r.token; await startSession();
+        const r = await post(mode === 'login' ? '/auth/login' : '/auth/register', body); auth.token = r.token;
+        if (r.recoveryCode) await showRecoveryCode(r.recoveryCode, { username: r.user.username });
+        await startSession();
       } catch (ex) { console.error('accesso', ex); err.textContent = ex.message; err.hidden = false; }
     };
     add(card, [
@@ -145,10 +179,14 @@ function showAuth(message) {
         h('label', { for: 'u', text: mode === 'login' ? 'Email scolastica o nome utente' : (domain ? `Email scolastica (@${domain})` : 'Nome utente') }), f.username,
         mode === 'register' && [domain && h('p', { class: 'small muted', text: `Gli studenti possono registrarsi solo con l’email scolastica @${domain}. I docenti possono usare un nome utente.` }),
           h('label', { for: 'dn', text: 'Nome da mostrare ai compagni' }), f.display, h('label', { for: 'rc', text: 'Codice di registrazione (te lo dà il docente)' }), f.code],
-        h('label', { for: 'pw', text: 'Password' + (mode === 'register' ? ' (almeno 10 caratteri)' : '') }), f.password,
+        mode === 'recover' && [h('p', { class: 'small muted', text: 'Usa il codice di recupero che hai salvato quando hai creato l’account (o dall’Account). Se non ce l’hai, chiedi a chi gestisce il computer o il server della classe: con «REIMPOSTA-PASSWORD» ti dà una password temporanea.' }),
+          h('label', { for: 'rk', text: 'Codice di recupero' }), f.rcode],
+        h('label', { for: 'pw', text: mode === 'recover' ? `Nuova password (almeno ${S.info?.auth?.minPasswordLength || 10} caratteri)` : 'Password' + (mode === 'register' ? ' (almeno 10 caratteri)' : '') }), f.password,
+        mode === 'recover' && [h('label', { for: 'pw2', text: 'Ripeti la nuova password' }), f.pw2],
         h('div', { style: 'margin-top:1rem' }, err),
-        h('div', { class: 'row', style: 'margin-top:1rem' }, h('button', { class: 'btn primary', type: 'submit', text: mode === 'login' ? 'Accedi' : 'Crea account' }),
-          h('button', { class: 'btn ghost', type: 'button', text: mode === 'login' ? 'Non hai un account? Registrati' : 'Ho già un account', onclick: () => { mode = mode === 'login' ? 'register' : 'login'; draw(); } }))),
+        h('div', { class: 'row', style: 'margin-top:1rem' }, h('button', { class: 'btn primary', type: 'submit', text: mode === 'login' ? 'Accedi' : mode === 'recover' ? 'Imposta la nuova password' : 'Crea account' }),
+          h('button', { class: 'btn ghost', type: 'button', text: mode === 'login' ? 'Non hai un account? Registrati' : 'Torna all’accesso', onclick: () => { mode = mode === 'login' ? 'register' : 'login'; draw(); } })),
+        mode === 'login' && h('button', { class: 'linkbtn small', type: 'button', style: 'margin-top:.6rem', text: 'Password dimenticata?', onclick: () => { mode = 'recover'; draw(); } })),
       S.info?.ai?.simulated && h('p', { class: 'banner sim show', style: 'margin-top:1rem;border-radius:12px;display:block', text: S.info.ai.notice }),
       h('p', { class: 'small muted', style: 'margin-top:1rem', text: 'Le conversazioni sono personali: il docente non le legge. Usa questo strumento come supporto allo studio, non come sostituto del tuo lavoro.' }),
     ]);
@@ -173,11 +211,29 @@ function buildShell() {
   add(root, h('div', { class: 'app' }, [h('div', { id: 'banners' }), h('main', { id: 'main', tabindex: '-1' })]));
   updateBanners(); island.setUser(S.user);
 }
+// il server acceso è di una versione precedente ai file aggiornati: le funzioni nuove risponderebbero «Risorsa non trovata»
+async function restartServer(btn) {
+  btn.disabled = true; btn.textContent = 'Riavvio in corso…';
+  const before = S.info?.server?.build;
+  try { await post('/server/restart'); } catch (e) { toast(e.message, 'bad'); btn.disabled = false; btn.textContent = 'Riavvia Omar'; return; }
+  for (let i = 0; i < 60; i++) {
+    await new Promise((ok) => setTimeout(ok, 1000));
+    try { const r = await fetch('/desktop/ping', { cache: 'no-store' }); const j = await r.json(); if (j.build && j.build !== before) { location.reload(); return; } } catch { /* ancora spento */ }
+  }
+  toast('Omar non si è riacceso da solo: chiudi la finestra nera «Omar AI» e riapri l’icona.', 'bad');
+}
+function staleBanner() {
+  if (!S.info?.server?.stale) return null;
+  const btn = S.info.server.canRestart ? h('button', { class: 'btn sm primary', type: 'button', text: 'Riavvia Omar', onclick: (e) => restartServer(e.currentTarget) }) : null;
+  return h('div', { class: 'banner upd show', role: 'alert' }, [h('span', { text: btn ? 'Omar AI è stato aggiornato: riavvialo per usare le funzioni nuove. ' : 'Omar AI è stato aggiornato: chiudi la finestra nera «Omar AI» e riapri l’icona per usare le funzioni nuove.' }), btn]);
+}
+setInterval(async () => { if (!S.user || document.hidden) return; try { const i = await get('/info'); const was = !!S.info?.server?.stale; S.info = i; if (!!i.server?.stale !== was) updateBanners(); } catch { /* ignora */ } }, 60_000);
 function updateBanners() {
   const b = $('#banners'); if (!b) return; clear(b);
+  const st = staleBanner(); if (st) b.append(st);
   const ai = S.info?.ai;
+  // NB: l'avviso «provider IA esterno» non viene mostrato (richiesta della docente): l'informazione resta nella pagina Privacy.
   if (ai?.simulated) b.append(h('div', { class: 'banner sim show', role: 'status', text: '🧪 MODALITÀ SIMULAZIONE — le risposte non sono generate da un modello IA' }));
-  else if (ai?.dataLeavesNetwork) b.append(h('div', { class: 'banner ext show', text: 'Le domande sono elaborate da un provider IA esterno: non inserire dati personali' }));
   if (S.user && S.conn === 'reconnecting') b.append(h('div', { class: 'banner offline show', role: 'status', text: 'Connessione con il gruppo interrotta: riconnessione in corso' }));
 }
 async function logout() { try { await post('/auth/logout'); } catch { /* già scaduta */ } auth.token = null; store(PKEY, null); S.user = null; S.active = null; S.rt.stop(); location.hash = ''; showAuth(); }
@@ -185,7 +241,7 @@ async function logout() { try { await post('/auth/logout'); } catch { /* già sc
 // ───────── router ─────────
 let cleanup = null;
 const VIEWS = { home: renderHome, chat: renderChat, materiali: renderMaterials, gruppo: renderGroup, docente: renderTeacher, privacy: renderPrivacy,
-  account: renderAccount, cronologia: renderHistory, projects: renderProjects, planner: renderPlanner, 'bulletin-board': renderBulletin };
+  account: renderAccount, cronologia: renderHistory, projects: renderProjects, planner: renderPlanner, 'bulletin-board': renderBulletin, prova: renderProva };
 async function route() {
   if (!S.user) return;
   const [, name = 'home', ...rest] = location.hash.split('/');
@@ -209,6 +265,11 @@ async function onRealtimeEvent(ev) {
   if (ev.type === 'self.unsubscribed') { await leaveLocal(ev.reason); return; }
   if (['member.joined', 'member.left', 'member.revoked', 'member.approved', 'member.pending', 'member.rejected'].includes(ev.type)) await S.refreshOverview();
   const txt = EV_TEXT[ev.type]; if (txt && ev.actorId !== S.user.id) toast(txt(ev));
+  if (!ev.replay) { // suoni: armonico quando un compagno condivide, avviso sommesso quando la Scatola Nera trova un conflitto
+    if (ev.type === 'contribution.shared' && ev.actorId !== S.user.id) play('chime');
+    if (ev.type === 'alert.opened') play('warn');
+    if (ev.type === 'arena.message' && ev.actorId !== S.user.id) play('chime');
+  }
   S.emit(ev);
 }
 async function leaveLocal(reason) {
@@ -250,13 +311,24 @@ async function linkDialog() {
   const subj = h('select', { id: 'ps' }, h('option', { value: '', text: '— nessuna —' }), S.subjects.map((s) => h('option', { value: s.id, text: s.name })));
   const ws2 = h('input', { type: 'text', id: 'pw2', placeholder: 'es. motore', maxLength: 60 });
   const appr = h('input', { type: 'checkbox', id: 'pa', checked: true });
-  const body = h('div', null, [
+  const radar = createRadar({ me: S.user.displayName, label: 'Inserisci il codice che ti ha dato il compagno', size: 'sm' }).searching();
+  code.addEventListener('input', () => { if (radar.el.dataset.state === 'error') radar.searching('Inserisci il codice che ti ha dato il compagno'); });
+  const body = h('div', null, [radar.el,
     h('p', { class: 'small muted', text: 'Collegarsi non condivide nulla: le tue chat restano personali. Condividi tu, di volta in volta, ciò che vuoi.' }),
     h('h3', { text: 'Ho un codice di invito' }), mk('lc', 'Codice', code), mk('lw', 'Di cosa ti occupi nel progetto? (facoltativo)', ws1),
     h('button', { class: 'btn primary', type: 'button', style: 'margin-top:.7rem', text: 'Collegati', onclick: async (e) => {
-      err.hidden = true; e.target.disabled = true;
-      try { const r = await post('/projects/join', { code: code.value, workstream: ws1.value || undefined }); await afterLink(r); e.target.closest('dialog').close(); }
+      err.hidden = true; e.target.disabled = true; const dlgEl = e.target.closest('dialog');
+      radar.state('connect').label('Mi collego al gruppo…'); radar.progress(0.15);
+      try {
+        const r = await post('/projects/join', { code: code.value, workstream: ws1.value || undefined });
+        // animazione «AirDrop»: l'anello si chiude, il gruppo compare con la spunta, poi la finestra si chiude
+        await radar.connect(r.project?.name || 'Gruppo', { sub: r.status === 'pending' ? 'in attesa di approvazione' : 'collegato', ms: 900 });
+        radar.label(r.status === 'pending' ? 'Richiesta inviata: aspetta l’approvazione' : 'Collegato!');
+        await new Promise((ok) => setTimeout(ok, 1100));
+        await afterLink(r); dlgEl?.close();
+      }
       catch (ex) {
+        radar.error('Codice non valido o scaduto');
         err.textContent = ex.message + (ex.code === 'invito_non_valido' ? ' Controlla che il codice sia ancora attivo (chi l\u2019ha creato lo rivede in «Invita»). Se il gruppo è stato creato su un ALTRO computer, collegatevi prima allo stesso server della classe (qui sotto).' : '');
         err.hidden = false;
       } finally { e.target.disabled = false; } } }),
@@ -281,8 +353,10 @@ function classeBox() {
       return;
     }
     if (d.aula) { add(box, h('p', { class: 'small', text: `Questo computer è il server della classe. Gli altri si collegano con: indirizzo ${(d.addresses || []).join(' oppure ')} · codice d’aula ${d.aulaKey}` })); return; }
-    add(box, [h('h3', { text: 'Compagni su un altro computer?' }),
-      h('p', { class: 'small muted', text: 'Ogni computer ha il suo Omar: un codice di invito vale solo dove è stato creato. Per lavorare in gruppo da computer diversi, un computer della classe (di solito quello del docente) diventa «server della classe» da Account, e gli altri si collegano qui.' }),
+    add(box, [h('h3', { text: 'Un altro computer o un telefono?' }),
+      h('p', { class: 'small muted', text: 'Su questo computer Omar funziona solo qui: un codice di invito vale solo sul Omar dove è stato creato, quindi un altro dispositivo con il suo Omar lo vede «non valido». Per collegare altri dispositivi tutti devono usare lo STESSO Omar:' }),
+      h('p', { class: 'small', text: '• Dal browser, anche da telefono: chiudi Omar e avvia LINK-ONLINE.bat (nella cartella di Omar). Esce un link https://…: apritelo sugli altri dispositivi, accedete e inserite il codice.' }),
+      h('p', { class: 'small', text: '• Tra computer con l’app: un computer diventa «server della classe» (Account) e gli altri si collegano qui sotto.' }),
       h('button', { class: 'btn sm primary', type: 'button', text: 'Collegati al server della classe', onclick: classeDialog })]);
   })();
   return box;
@@ -301,9 +375,9 @@ export async function classeDialog() {
 }
 async function afterLink(r) {
   const me = await get('/me'); S.projects = me.projects; S.pendingJoins = me.pending || [];
-  if (r.status === 'pending') { toast('Richiesta inviata: attendi che il creatore del gruppo ti approvi.'); renderBar(); return; }
+  if (r.status === 'pending') { toast(r.already ? `La tua richiesta per “${r.project?.name || 'il gruppo'}” è già in attesa: entrerai appena il creatore ti approva.` : 'Richiesta inviata: attendi che il creatore del gruppo ti approvi.'); renderBar(); return; }
   const p = S.projects.find((x) => x.id === r.project?.id) || r.project;
-  await S.setActive(p); toast(`Sei nel gruppo “${p.name}”.`); if (location.hash.startsWith('#/gruppo')) route();
+  await S.setActive(p); toast(r.already ? `Fai già parte di “${p.name}”: questo dispositivo ora è collegato al gruppo.` : `Sei nel gruppo “${p.name}”.`); if (location.hash.startsWith('#/gruppo')) route();
 }
 async function myGroupsDialog() {
   const body = h('div', null, S.projects.map((p) => h('div', { class: 'item row' }, h('strong', { class: 'grow', text: p.name }), h('span', { class: 'badge', text: p.myRole }),
@@ -339,14 +413,26 @@ export async function inviteDialog() {
       h('span', { class: 'small muted grow', text: `scade ${fmtDate(i.expiresAt)} · usato ${i.uses}/${i.maxUses}` }), i.code && copy(i.code),
       h('button', { class: 'btn sm danger', type: 'button', text: 'Annulla', onclick: async () => { try { await del(`/projects/${S.active.id}/invites/${i.id}`); loadActive(); } catch (ex) { toast(ex.message, 'bad'); } } })))]);
   };
-  const show = (r) => { clear(out); add(out, [h('p', null, 'Nuovo codice di invito (valido fino alle ', fmtDate(r.expiresAt), ', max ', r.maxUses, ' usi):'), h('div', { class: 'row' }, h('div', { class: 'code', text: r.code }), copy(r.code)), h('p', { class: 'small muted', text: r.note })]); loadActive(); };
+  // online (link web) l'invito completo contiene anche l'indirizzo: chi lo riceve sa dove aprire Omar e cosa scrivere
+  const online = !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  const fullInvite = (code) => `Unisciti al gruppo “${S.active.name}” su Omar AI:\n1) apri ${location.origin}\n2) accedi o registrati\n3) Gruppo > Collega un dispositivo > codice ${code}`;
+  const copyFull = (code) => h('button', { class: 'btn sm primary', type: 'button', text: 'Copia invito completo', onclick: async (e) => { try { await navigator.clipboard.writeText(fullInvite(code)); e.target.textContent = 'Copiato'; } catch { toast(fullInvite(code)); } } });
+  // radar «AirDrop»: mentre il codice è attivo, i compagni che entrano compaiono intorno a te con un suono
+  const radar = createRadar({ me: S.user.displayName, label: 'Genera un codice: i compagni che entrano compaiono qui', size: 'sm' });
+  radar.state('idle');
+  const unsub = S.on((ev) => {
+    if (ev.type === 'member.joined' && ev.actorId !== S.user.id) { const pe = radar.addPeer(ev.data?.displayName || 'Compagno', { sub: 'entrato' }); setTimeout(() => pe.done(), 350); radar.label(`${ev.data?.displayName || 'Un compagno'} è entrato nel gruppo`); }
+    if (ev.type === 'member.pending') { const pe = radar.addPeer(ev.data?.displayName || 'Compagno', { sub: 'da approvare' }); pe.progress(0.5); radar.label(`${ev.data?.displayName || 'Qualcuno'} chiede di entrare: approvalo in «Partecipanti»`); }
+  });
+  const show = (r) => { radar.searching('In attesa dei compagni…'); clear(out); add(out, [h('p', null, 'Nuovo codice di invito (valido fino alle ', fmtDate(r.expiresAt), ', max ', r.maxUses, ' usi):'), h('div', { class: 'row' }, h('div', { class: 'code', text: r.code }), copy(r.code), online && copyFull(r.code)),
+    online ? h('p', { class: 'small muted', text: `Chi vuoi invitare apre ${location.origin}, accede e inserisce il codice in Gruppo > Collega un dispositivo.` }) : h('p', { class: 'small muted', text: r.note })]); loadActive(); };
   const gen = (path) => async () => { err.hidden = true; try { show(await post(`/projects/${S.active.id}/invites${path}`, { ttlMin: +ttl.value, maxUses: +uses.value })); } catch (ex) { err.textContent = ex.message; err.hidden = false; } };
   loadActive();
-  const body = h('div', null, [h('p', { class: 'small muted', text: 'Comunica il codice a voce o scrivilo ai compagni. Il codice non dà permessi speciali, scade da solo e puoi annullarlo o rigenerarlo quando vuoi.' }),
+  const body = h('div', null, [radar.el, h('p', { class: 'small muted', text: 'Comunica il codice a voce o scrivilo ai compagni. Il codice non dà permessi speciali, scade da solo e puoi annullarlo o rigenerarlo quando vuoi.' }),
     h('div', { class: 'row' }, [h('div', null, h('label', { for: 'ttl', text: 'Durata' }), ttl), h('div', null, h('label', { for: 'uses', text: 'Usi massimi' }), uses)]),
     h('div', { class: 'row', style: 'margin-top:.7rem' }, [h('button', { class: 'btn primary', type: 'button', text: 'Genera un nuovo codice', onclick: gen('') }),
       h('button', { class: 'btn', type: 'button', text: 'Rigenera (annulla i codici attivi)', onclick: gen('/regenerate') })]), h('div', { style: 'margin-top:1rem' }, out), err, active, h('hr'), classeBox()]);
-  await dialog('Invita compagni nel gruppo', body, [{ label: 'Chiudi' }]);
+  try { await dialog('Invita compagni nel gruppo', body, [{ label: 'Chiudi' }]); } finally { unsub?.(); radar.destroy(); }
 }
 async function leaveDialog() {
   const retract = h('input', { type: 'checkbox', id: 'rt' });
@@ -361,3 +447,9 @@ boot();
 
 // Un file lasciato cadere fuori dal campo di scrittura non deve far uscire dall'app (il browser lo aprirebbe al posto di Omar).
 for (const t of ['dragover', 'drop']) window.addEventListener(t, (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files') && !e.defaultPrevented) e.preventDefault(); });
+
+// clic morbido quando si cambia scheda (in tutta l'app)
+document.addEventListener('click', (e) => { if (e.target.closest?.('[role=tab], .tabs a, .qt-tab')) play('tab'); });
+
+// Ctrl+Maiusc+L: modalità LIM / proiettore al volo
+document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'l' || e.key === 'L')) { e.preventDefault(); setLim(!limOn()); toast(limOn() ? 'Modalità LIM attiva: testo grande e contrasto alto.' : 'Modalità LIM disattivata.'); } });
