@@ -2,6 +2,9 @@
 import { h, add, clear, toast, confirmDialog, fmtDate } from './dom.js';
 import { get, post, patch, del } from './api.js';
 import { icon } from './icons.js';
+import { showRecoveryCode } from './recovery.js';
+import { soundOn, setSound } from './sound.js';
+import { limOn, setLim } from './lim.js';
 
 // Stima della robustezza della password (solo indicativa, lato browser: la regola vera la applica il server)
 function strength(pw, min) {
@@ -67,8 +70,19 @@ export async function renderAccount(main, S) {
     h('label', { for: 'pw-rep', text: 'Ripeti la nuova password' }), rep, checks,
     h('label', { class: 'radio' }, others, 'Disconnetti gli altri dispositivi (consigliato)'),
     err, h('div', { class: 'row', style: 'margin-top:.8rem' }, h('button', { class: 'btn primary', type: 'submit', text: 'Cambia password' })),
-    h('p', { class: 'small muted', text: 'Hai dimenticato la password? Chiedi al docente o all’amministratore di reimpostarla: per sicurezza non viene mai inviata per email.' }),
   ]);
+  // ── codice di recupero: permette di scegliere una nuova password da soli se la si dimentica ──
+  const recPw = h('input', { type: 'password', id: 'rc-pw', autocomplete: 'current-password', placeholder: 'La tua password attuale' });
+  const recErr = h('div', { class: 'err', role: 'alert', hidden: true });
+  const recState = h('p', { class: 'small', text: info.hasRecovery ? '✓ Hai già un codice di recupero. Generandone uno nuovo, quello vecchio smette di valere.' : 'Non hai ancora un codice di recupero: generalo ora, così se dimentichi la password potrai cambiarla da solo.' });
+  const recovery = h('section', { class: 'acc-card', 'aria-labelledby': 'acc-rc' }, [h('h2', { id: 'acc-rc' }, icon('lock', 19), 'Password dimenticata? Codice di recupero'), recState,
+    h('label', { for: 'rc-pw', text: 'Conferma con la password attuale' }), recPw, recErr,
+    h('div', { class: 'row', style: 'margin-top:.6rem' }, h('button', { class: 'btn', type: 'button', onclick: async (e) => {
+      const b = e.currentTarget; recErr.hidden = true; b.disabled = true;
+      try { const r = await post('/account/recovery', { currentPassword: recPw.value }); recPw.value = ''; await showRecoveryCode(r.code, { username: info.user.username }); recState.textContent = '✓ Codice di recupero creato. Quello precedente non vale più.'; }
+      catch (ex) { recErr.textContent = ex.message; recErr.hidden = false; } finally { b.disabled = false; }
+    } }, icon('key', 15), info.hasRecovery ? 'Genera un nuovo codice' : 'Genera il codice di recupero')),
+    h('p', { class: 'small muted', text: 'Con il codice: schermata di accesso › «Password dimenticata?». Senza codice, chi gestisce il computer usa «REIMPOSTA-PASSWORD» e ti dà una password temporanea, da cambiare al primo accesso.' })]);
 
   // ── dispositivi ──
   const devBox = h('div', { class: 'acc-devs' });
@@ -91,18 +105,25 @@ export async function renderAccount(main, S) {
   const seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Tema' }, [['dark', 'Scuro', 'moon'], ['light', 'Chiaro', 'sun']].map(([v, l, ic]) => h('button', { type: 'button', 'aria-pressed': String(S.theme?.get() === v), onclick: (e) => { S.theme.set(v); for (const b of seg.children) b.setAttribute('aria-pressed', String(b === e.currentTarget)); } }, icon(ic, 16), l)));
   const voice = S.voice;
   const autoRead = h('input', { type: 'checkbox', id: 'acc-tts', checked: !!voice?.prefs.autoRead, disabled: !voice?.canSpeak, onchange: (e) => voice.setPref('autoRead', e.target.checked) });
-  const rate = h('input', { type: 'range', id: 'acc-rate', min: 0.7, max: 1.4, step: 0.05, value: voice?.prefs.rate || 1, disabled: !voice?.canSpeak, oninput: (e) => voice.setPref('rate', Number(e.target.value)) });
+  const rate = h('input', { type: 'range', id: 'acc-rate', min: 0.7, max: 1.4, step: 0.05, value: voice?.prefs.rate || 0.92, disabled: !voice?.canSpeak, oninput: (e) => voice.setPref('rate', Number(e.target.value)) });
+  const voiceLine = h('p', { class: 'small muted' });
+  const voiceInfo = () => { if (!voice?.canSpeak) return; const n = voice.voiceName(); voiceLine.textContent = n ? `Voce in uso: ${n}${voice.prefs.calm !== false && !voice.hasMale() ? ' — su questo computer non c’è una voce maschile italiana: in Windows aggiungila da Impostazioni › Ora e lingua › Voce, oppure apri Omar con Edge (voce «Diego»).' : ''}` : 'Le voci del computer si stanno caricando…'; };
+  voiceInfo(); try { speechSynthesis.addEventListener('voiceschanged', voiceInfo); } catch { /* ignora */ }
   const prefs = h('section', { class: 'acc-card', 'aria-labelledby': 'acc-pref' }, [h('h2', { id: 'acc-pref' }, icon('sun', 19), 'Preferenze'),
     h('p', { class: 'dlg-label', text: 'Tema' }), seg,
+    h('p', { class: 'dlg-label', text: 'Classe e lavagna' }),
+    h('label', { class: 'radio', for: 'acc-lim' }, h('input', { type: 'checkbox', id: 'acc-lim', checked: limOn(), onchange: (e) => setLim(e.target.checked) }), 'Modalità LIM / proiettore: testo più grande e contrasto alto'),
+    h('label', { class: 'radio', for: 'acc-snd' }, h('input', { type: 'checkbox', id: 'acc-snd', checked: soundOn(), onchange: (e) => setSound(e.target.checked) }), 'Suoni dell’interfaccia (clic, avvisi, contributi dei compagni)'),
     h('p', { class: 'dlg-label', text: 'Omar Voice' }),
-    voice?.canSpeak ? [h('label', { class: 'radio', for: 'acc-tts' }, autoRead, 'Leggi ad alta voce le risposte appena arrivano'), h('label', { for: 'acc-rate', text: 'Velocità della voce' }), rate,
+    voice?.canSpeak ? [h('label', { class: 'radio', for: 'acc-tts' }, autoRead, 'Leggi ad alta voce le risposte appena arrivano'),
+      h('label', { class: 'radio', for: 'acc-calm' }, h('input', { type: 'checkbox', id: 'acc-calm', checked: voice.prefs.calm !== false, onchange: (e) => { voice.setPref('calm', e.target.checked); voiceInfo(); } }), 'Voce calma: maschile, un po’ più lenta e più bassa'),
+      voiceLine, h('label', { for: 'acc-rate', text: 'Velocità della voce' }), rate,
       h('button', { class: 'btn sm', type: 'button', onclick: () => voice.speak('Ciao! Sono Omar. Ti leggo le risposte con questa voce.') }, icon('volume', 15), 'Prova la voce')] : h('p', { class: 'small muted', text: 'Questo browser non supporta la lettura ad alta voce.' }),
     h('p', { class: 'small muted', text: voice?.canListen ? 'Dettatura: premi il microfono accanto al campo di scrittura. Nota: in Chrome ed Edge il riconoscimento vocale è svolto dai server di Google o Microsoft, fuori dalla scuola.' : 'La dettatura vocale non è supportata da questo browser (prova Chrome o Edge).' }),
   ]);
 
   const more = h('section', { class: 'acc-card', 'aria-labelledby': 'acc-m' }, [h('h2', { id: 'acc-m' }, icon('more', 19), 'Altro'),
     h('div', { class: 'acc-links' }, [
-      h('button', { class: 'acc-link', type: 'button', onclick: () => S.replayTutorial?.() }, icon('play', 18), h('span', null, h('strong', { text: 'Rivedi il tutorial' }), h('small', { text: 'Il video che spiega tutte le funzioni, passo per passo.' }))),
       h('a', { class: 'acc-link', href: '#/privacy' }, icon('lock', 18), h('span', null, h('strong', { text: 'Privacy e dati' }), h('small', { text: 'Scarica o elimina i tuoi dati, cosa resta privato.' }))),
       h('a', { class: 'acc-link', href: '#/cronologia' }, icon('history', 18), h('span', null, h('strong', { text: 'Tutta la cronologia' }), h('small', { text: 'Le tue conversazioni, per giorno e materia.' }))),
       h('button', { class: 'acc-link danger', type: 'button', onclick: () => S.logout?.() }, icon('power', 18), h('span', null, h('strong', { text: 'Esci' }), h('small', { text: 'Chiude la sessione su questo dispositivo.' }))),
@@ -143,6 +164,6 @@ export async function renderAccount(main, S) {
   }
   drawClasse();
 
-  add(page, [h('div', { class: 'acc-grid' }, [h('div', { class: 'acc-col' }, [profile, devices, prefs]), h('div', { class: 'acc-col' }, [form, classe, more])])]);
+  add(page, [h('div', { class: 'acc-grid' }, [h('div', { class: 'acc-col' }, [profile, devices, prefs]), h('div', { class: 'acc-col' }, [form, recovery, classe, more])])]);
   main.append(page);
 }
