@@ -117,6 +117,7 @@ export async function renderAccount(main, S) {
 
   const more = h('section', { class: 'acc-card', 'aria-labelledby': 'acc-m' }, [h('h2', { id: 'acc-m' }, icon('more', 19), 'Altro'),
     h('div', { class: 'acc-links' }, [
+      h('button', { class: 'acc-link', type: 'button', onclick: () => S.replayTutorial?.() }, icon('play', 18), h('span', null, h('strong', { text: 'Rivedi il tutorial' }), h('small', { text: 'Il video che spiega tutte le funzioni, passo per passo.' }))),
       h('a', { class: 'acc-link', href: '#/privacy' }, icon('lock', 18), h('span', null, h('strong', { text: 'Privacy e dati' }), h('small', { text: 'Scarica o elimina i tuoi dati, cosa resta privato.' }))),
       h('a', { class: 'acc-link', href: '#/cronologia' }, icon('history', 18), h('span', null, h('strong', { text: 'Tutta la cronologia' }), h('small', { text: 'Le tue conversazioni, per giorno e materia.' }))),
       h('button', { class: 'acc-link danger', type: 'button', onclick: () => S.logout?.() }, icon('power', 18), h('span', null, h('strong', { text: 'Esci' }), h('small', { text: 'Chiude la sessione su questo dispositivo.' }))),
